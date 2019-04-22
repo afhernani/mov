@@ -3,7 +3,7 @@
 ### Inatalation
     On windows 7+ (64 or 32 bit) and linux (64 bit), ffpyplayer wheels can be installed for python 3.5+ using:
     pip install ffpyplayer
-    Instalation and documentation at [ffpyplayer](https://matham.github.io/ffpyplayer/installation.html)
+    Instalation and documentation at (ffpyplayer)[https://matham.github.io/ffpyplayer/installation.html]
 #### Others packages.
      Pillow, tkinter
 ### Version development.
