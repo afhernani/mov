@@ -26,6 +26,8 @@ class VideoStream:
         print('WxH -> ', self.w, self.h)
         self.pts = self.player.get_pts() # Returns the elapsed play time. float
         print('pts ->', self.pts)
+        self.duration = data['duration']
+        print('duration', self.duration)
         self.pause = self.player.get_pause() # Returns whether the player is paused.
         print('pause ->', self.pause)
         self.volume = self.player.get_volume() # Returns the volume of the audio. loat: A value between 0.0 - 1.0
@@ -41,7 +43,8 @@ class VideoStream:
             elif self.l_frame is None:
                 time.sleep(0.01)
             else:
-                _imagen, self.t = self.l_frame
+                _imagen, self.pts = self.l_frame
+                print('pts ->', self.pts)
                 arr = _imagen.to_memoryview()[0] # array image
                 self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
                 # self.imagen.show()
@@ -51,8 +54,8 @@ class VideoStream:
     def get_frame(self):
         '''
         Return valores:
-            val : 'eof' end sound
-            t : time location.
+            val : 'eof' or 'pause' 
+            pts : time location aduio imagen.
             imagen : frame image
         Return (val, t, imagen)
         '''
@@ -60,16 +63,16 @@ class VideoStream:
         if self.val == 'eof':
             # condicion final fichero, salimos if and while
             self.player.toggle_pause() # ponemos en pause
-            return self.val, self.t, None 
+            return self.val, None, None 
         elif self.l_frame is None:
             time.sleep(0.01)
-            return self.val, self.t, None
+            return self.val, None, None
         else:
-            _imagen, self.t = self.l_frame
+            _imagen, self.pts = self.l_frame
             arr = _imagen.to_memoryview()[0] # array image
             self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
             # self.imagen.show()
-            return self.val, self.t, self.imagen
+            return self.val, self.pts, self.imagen
         
 
     def toggle_pause(self):
