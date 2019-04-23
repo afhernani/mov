@@ -56,7 +56,7 @@ class ScreenPlayer:
         if not file == None:
             if os.path.exists(file.name):
                 self.video_source = file.name
-                self.replay()
+                self.newplay()
         
     def toogle_pause(self):
         if self.btn_toogle_pause['text']=='[]':
@@ -71,24 +71,21 @@ class ScreenPlayer:
         self.vid.seek(pts=float(val))
         #self.var_t.set(v)
 
-
     def replay(self):
+        self.vid.seek(pts=0.01)
+        pass
+
+    def newplay(self):
         ''' get replay '''
         self.vid = VideoStream(self.video_source)
         self.delay = self.vid.f_rate
         # valores de la barra.
         self.var_t.set(0.0)
         self.scale.configure(to=self.vid.duration)
-        # h = self.window.winfo_reqheight()
-        # w = self.window.winfo_reqwidth()
-        # h_b = self.btn_open['height'] # da cero height no definida ????
-        # print('boton height ->', h_b)
-        h_f = int(self.vid.h + 35)
+        h = self.btn_open.winfo_height()
+        h_f = int(self.vid.h + h)
         w_f = int(self.vid.w)
-        # wscale = w_f / w
-        # hscale = h_f / h
         self.canvas.config(width=self.vid.w, height=self.vid.h)
-        #self.window.config(width=w_f, height=h_f)
         # rescale all the objects tagged with the "all" tag
         cad = f'{w_f}x{h_f}'
         self.window.geometry(cad)
