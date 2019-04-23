@@ -75,7 +75,8 @@ class ScreenPlayer:
         Get a frame from the video source
         '''
         # Get a frame from the video source
-        frame = self.vid.get_frame()[2]
+        #frame = self.vid.get_frame()[2]
+        frame = self.vid.imagen
         if frame is None:
             print('the video stream is closed')
             return
@@ -99,8 +100,8 @@ class ScreenPlayer:
         
         if filesave !='':
             frame.save(filesave)
-        # actualiza directorio si este ha cambiado
-        self.dirImages = os.path.dirname(filesave)
+            # actualiza directorio si este ha cambiado
+            self.dirImages = os.path.dirname(filesave)
         #self.vid.snapshot()
         print(filesave)
         pass
