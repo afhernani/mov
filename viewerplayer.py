@@ -41,7 +41,8 @@ class ScreenPlayer:
 
     def open_file(self):
         ''' Open file with menu ... '''
-        file = filedialog.askopenfile(initialdir='_Work', title='select file', 
+        dirpath = os.path.dirname(self.video_source)
+        file = filedialog.askopenfile(initialdir=dirpath, title='select file', 
                                         filetypes={('mp4','*.mp4'), ('flv','*.flv')})
         print(file)
         if not file == None:
