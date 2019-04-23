@@ -11,6 +11,7 @@ __version__ = '1.0'
 class VideoStream:
     def __init__(self, video_source=0):
         ff_opts = {'paused' : True} # Audio options
+        self.video_surce = video_source
         # Open the video source
         self.player = MediaPlayer(video_source, ff_opts=ff_opts)
         # TODO: colocar pausa de tiempo para cargas mediaplayer y obtener los datos
@@ -40,8 +41,8 @@ class VideoStream:
             elif self.l_frame is None:
                 time.sleep(0.01)
             else:
-                self.imagen, self.t = self.l_frame
-                arr = self.imagen.to_memoryview()[0] # array image
+                _imagen, self.t = self.l_frame
+                arr = _imagen.to_memoryview()[0] # array image
                 self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
                 # self.imagen.show()
                 cond = False
@@ -59,15 +60,13 @@ class VideoStream:
         if self.val == 'eof':
             # condicion final fichero, salimos if and while
             self.player.toggle_pause() # ponemos en pause
-            self.t = None
-            self.imagen = None
-            return self.val, self.t, self.imagen 
+            return self.val, self.t, None 
         elif self.l_frame is None:
             time.sleep(0.01)
             return self.val, self.t, None
         else:
-            self.imagen, self.t = self.l_frame
-            arr = self.imagen.to_memoryview()[0] # array image
+            _imagen, self.t = self.l_frame
+            arr = _imagen.to_memoryview()[0] # array image
             self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
             # self.imagen.show()
             return self.val, self.t, self.imagen
@@ -83,11 +82,24 @@ class VideoStream:
         except:
             pass
     
-    def snapshot(self):
+    def snapshot(self, road=None):
         '''
-        Nothing for now
+        get current frame
         '''
-        pass
+        img = self.l_frame[0]
+        if img is not None:
+            arr = img.to_memoryview()[0] # array image
+            img = Image.frombytes("RGB", (self.w, self.h), arr.memview)
+            # vamos a guardar esto.
+            time_str = time.strftime("%d-%m-%Y-%H-%M-%S")
+            frame_name  = f"frame-{time_str}.jpg"
+            if not road:
+                ruta = os.path.dirname(self.video_surce)
+                name_out = os.path.join(ruta, frame_name)
+            else:
+                name_out = os.path.join(road, frame_name)
+            img.save(name_out)
+        
 
     # Release the video source when the object is destroyed
     def __del__(self):
