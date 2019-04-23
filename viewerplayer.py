@@ -31,9 +31,16 @@ class ScreenPlayer:
         self.btn_open = tk.Button(window, text='...', command=self.open_file)
         self.btn_open.pack(side='right')
         # Button replay
-        self.btn_replay = tk.Button(window, text="Replay", command=self.replay)
+        self.btn_replay = tk.Button(window, text=">>", command=self.replay)
         self.btn_replay.pack(side='right')
-
+        # Button play-pausa
+        self.btn_toogle_pause = tk.Button(window, text="[]", command=self.toogle_pause)
+        self.btn_toogle_pause.pack(side='right')
+        # Slade
+        self.var_t = tk.DoubleVar()
+        self.scale = tk.Scale(window, from_=0.0, to=self.vid.duration, showvalue=0, orient='horizontal', variable=self.var_t, 
+                        resolution=0.1, sliderrelief='flat', command=self.onScale )
+        self.scale.pack(side='left', fill='x', expand=1)
         # After it is called once, the update method will be automatically called every delay milliseconds
         self.delay = self.vid.f_rate
         self.update()
@@ -51,15 +58,30 @@ class ScreenPlayer:
                 self.video_source = file.name
                 self.replay()
         
+    def toogle_pause(self):
+        if self.btn_toogle_pause['text']=='[]':
+            self.btn_toogle_pause.configure(text='>')
+            self.vid.toggle_pause()
+        else:
+            self.btn_toogle_pause.configure(text='[]')
+            self.vid.toggle_pause()
+
+    def onScale(self, val):
+        print('scale onScale ->', val)
+        #self.var_t.set(v)
+
 
     def replay(self):
         ''' get replay '''
         self.vid = VideoStream(self.video_source)
         self.delay = self.vid.f_rate
+        # valores de la barra.
+        self.var_t.set(0.0)
+        self.scale.configure(to=self.vid.duration)
         # h = self.window.winfo_reqheight()
         # w = self.window.winfo_reqwidth()
-        h_b = self.btn_open['height']
-        print('boton height ->', h_b)
+        # h_b = self.btn_open['height'] # da cero height no definida ????
+        # print('boton height ->', h_b)
         h_f = int(self.vid.h + 35)
         w_f = int(self.vid.w)
         # wscale = w_f / w
@@ -108,12 +130,13 @@ class ScreenPlayer:
  
     def update(self):
         # Get a frame from the video source
-        frame = self.vid.get_frame()[2]
+        val, pts, frame = self.vid.get_frame()
 
         if frame is not None:
             self.photo = ImageTk.PhotoImage(frame)
             self.canvas.delete('all') # TODO: veamos que pasa con esto....
             self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
+            self.var_t.set(pts)
 
         self.window.after(self.delay, self.update)
 
