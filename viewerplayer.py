@@ -18,6 +18,7 @@ class ScreenPlayer:
         self.video_source = video_source
         self.window['bg'] = 'Black'
         self.window.resizable(width=False, height=False)
+        self.dirImages = ''
         # open video source (by default this will try to open the computer webcam)
         self.vid = VideoStream(self.video_source)
         # Create a canvas that can fit the above video source size
@@ -73,6 +74,35 @@ class ScreenPlayer:
         '''
         Get a frame from the video source
         '''
+        # Get a frame from the video source
+        frame = self.vid.get_frame()[2]
+        if frame is None:
+            print('the video stream is closed')
+            return
+        # define options for opening
+        time_str = time.strftime("%d-%m-%Y-%H-%M-%S")
+        filename  = f"frame-{time_str}.jpg"
+        title='Save file as'
+        filetypes={('png','*.png'), ('jpg','*.jpg')}
+        fileExt = '*.jpg'
+        options = {}
+        options['defaultextension'] = fileExt
+        options['filetypes'] = filetypes
+        options['initialfile'] = filename
+        options['title'] = title
+        if self.dirImages != '':
+            options['initialdir'] = self.dirImages
+        else:
+            options['initialdir'] = os.getenv('HOME')
+        
+        filesave = filedialog.asksaveasfilename(**options)
+        
+        if filesave !='':
+            frame.save(filesave)
+        # actualiza directorio si este ha cambiado
+        self.dirImages = os.path.dirname(filesave)
+        #self.vid.snapshot()
+        print(filesave)
         pass
  
     def update(self):
