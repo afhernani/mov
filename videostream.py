@@ -55,24 +55,22 @@ class VideoStream:
             imagen : frame image
         Return (val, t, imagen)
         '''
-        # TODO: erase loop while do not anything really
-        while 1:
-            self.l_frame, self.val = self.player.get_frame()
-            if self.val == 'eof':
-                # condicion final fichero, salimos if and while
-                self.player.toggle_pause() # ponemos en pause
-                self.t = None
-                self.imagen = None
-                return self.val, self.t, self.imagen 
-            elif self.l_frame is None:
-                time.sleep(0.01)
-                return self.val, self.t, None
-            else:
-                self.imagen, self.t = self.l_frame
-                arr = self.imagen.to_memoryview()[0] # array image
-                self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
-                # self.imagen.show()
-                return self.val, self.t, self.imagen
+        self.l_frame, self.val = self.player.get_frame()
+        if self.val == 'eof':
+            # condicion final fichero, salimos if and while
+            self.player.toggle_pause() # ponemos en pause
+            self.t = None
+            self.imagen = None
+            return self.val, self.t, self.imagen 
+        elif self.l_frame is None:
+            time.sleep(0.01)
+            return self.val, self.t, None
+        else:
+            self.imagen, self.t = self.l_frame
+            arr = self.imagen.to_memoryview()[0] # array image
+            self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
+            # self.imagen.show()
+            return self.val, self.t, self.imagen
         
 
     def toggle_pause(self):
