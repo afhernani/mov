@@ -72,7 +72,10 @@ class ScreenPlayer:
         #self.var_t.set(v)
 
     def replay(self):
-        self.vid.seek(pts=0.01)
+        if self.var_t.get() == self.scale.get():
+            self.newplay()
+        else:
+            self.vid.seek(pts=0.01)
         pass
 
     def newplay(self):
@@ -82,6 +85,7 @@ class ScreenPlayer:
         # valores de la barra.
         self.var_t.set(0.0)
         self.scale.configure(to=self.vid.duration)
+        # dimension vertical ventana.
         h = self.btn_open.winfo_height()
         h_f = int(self.vid.h + h)
         w_f = int(self.vid.w)
