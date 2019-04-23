@@ -85,6 +85,12 @@ class VideoStream:
         except:
             pass
     
+    def seek(self, pts=None, relative=False, accurate=False):
+        if not pts:
+            return
+        self.player.seek(pts, relative=False, accurate=False)
+        pass
+
     def snapshot(self, road=None):
         '''
         get current frame
