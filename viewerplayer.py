@@ -8,7 +8,7 @@ import time
 import os
 from videostream import VideoStream
 
-__version__ = '1.0'
+__version__ = '1.1'
 
 class ScreenPlayer:
     def __init__(self, window, window_title, video_source=0):
@@ -68,6 +68,7 @@ class ScreenPlayer:
 
     def onScale(self, val):
         print('scale onScale ->', val)
+        self.vid.seek(pts=float(val))
         #self.var_t.set(v)
 
 
