@@ -6,7 +6,7 @@
     Instalation and documentation at (ffpyplayer)[https://matham.github.io/ffpyplayer/installation.html]
 #### Others packages.
      Pillow, tkinter
-### Version development.
+## Version development.
     Version = 1.0
 ### Advantage:
     Good sound and image synchronization. 
@@ -21,5 +21,9 @@
     Adapt the image buffer to the size of the form with custom resizing.
     add time and sound controls, with inter-activity locks.
     many other things that must be developed.
-
+## Version development.
+    Version = 1.1
+### Improvements:
+    included scroll bar and buttons pause and restart and snapshot
+    start of the application without a source file,
 
