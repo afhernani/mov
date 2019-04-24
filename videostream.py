@@ -62,7 +62,7 @@ class VideoStream:
         self.l_frame, self.val = self.player.get_frame()
         if self.val == 'eof':
             # condicion final fichero, salimos if and while
-            self.player.toggle_pause() # ponemos en pause
+            # self.player.toggle_pause() # ponemos en pause
             return self.val, None, None 
         elif self.l_frame is None:
             time.sleep(0.01)

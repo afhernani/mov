@@ -11,18 +11,25 @@ from videostream import VideoStream
 __version__ = '1.1'
 
 class ScreenPlayer:
-    def __init__(self, window, window_title, video_source=0):
+    def __init__(self, window, window_title, video_source=None):
         ''' Initialice window app '''
         self.window = window
         self.window.title(window_title)
-        self.video_source = video_source
         self.window['bg'] = 'Black'
         self.window.resizable(width=False, height=False)
         self.dirImages = ''
-        # open video source (by default this will try to open the computer webcam)
-        self.vid = VideoStream(self.video_source)
+        self.video_source = video_source
+        w = 350; h = 230; pts = 100.0
+        self.vid = None
+        if self.video_source is not None:
+            # open video source (by default this will try to open the computer webcam)
+            self.vid = VideoStream(self.video_source)
+            w = self.vid.w
+            h = self.vid.h
+            pts = self.vid.duration
+        
         # Create a canvas that can fit the above video source size
-        self.canvas = tk.Canvas(window, width = self.vid.w, height = self.vid.h)
+        self.canvas = tk.Canvas(window, width = w, height = h)
         self.canvas.pack()
         # Button that lets the user take a snapshot
         self.btn_snapshot=tk.Button(window, text="Snapshot", command=self.snapshot)
@@ -38,20 +45,40 @@ class ScreenPlayer:
         self.btn_toogle_pause.pack(side='right')
         # Slade
         self.var_t = tk.DoubleVar()
-        self.scale = tk.Scale(window, from_=0.0, to=self.vid.duration, showvalue=0, orient='horizontal', variable=self.var_t, 
-                        resolution=0.1, sliderrelief='flat', command=self.onScale )
+        self.scale = tk.Scale(window, from_=0.0, to= pts, showvalue=0, orient='horizontal', variable=self.var_t, 
+                        resolution=0.2, sliderrelief='flat', command=self.onScale )
         self.scale.pack(side='left', fill='x', expand=1)
-        # After it is called once, the update method will be automatically called every delay milliseconds
-        self.delay = self.vid.f_rate
+        self.delay = 16
+        if self.video_source is not None:
+            # After it is called once, the update method will be automatically called every delay milliseconds
+            self.delay = self.vid.f_rate
+        self.val = None
+        self.pts = None
         self.update()
-
         self.window.mainloop()
+    
+    def isurl(self, tip=None):
+        '''
+        Return bolean true si existe and it's ends with
+        ('.mp4', '.MP4', '.flv', '.FLV', '.mpg', '.avi')
+        '''
+        if not tip:
+            return False
+        exten = ('.mp4', '.MP4', '.flv', '.FLV', '.mpg', '.avi')
+        if os.path.exists(tip):
+            if source.endswith(exten):
+                return True
+        return False
 
     def open_file(self):
         ''' Open file with menu ... '''
-        dirpath = os.path.dirname(self.video_source)
+        if not self.video_source:
+            dirpath='.'
+        else:
+            dirpath = os.path.dirname(self.video_source)
         file = filedialog.askopenfile(initialdir=dirpath, title='select file', 
-                                        filetypes={('mp4','*.mp4'), ('flv','*.flv')})
+                                        filetypes={('flv','*.flv'), ('mp4','*.mp4')}, 
+                                        defaultextension='*.mp4')
         print(file)
         if not file == None:
             if os.path.exists(file.name):
@@ -59,7 +86,12 @@ class ScreenPlayer:
                 self.newplay()
         
     def toogle_pause(self):
-        if self.btn_toogle_pause['text']=='[]':
+        '''
+        toogle pause
+        '''
+        if not self.vid:
+            return
+        if self.val =='paused':
             self.btn_toogle_pause.configure(text='>')
             self.vid.toggle_pause()
         else:
@@ -67,13 +99,18 @@ class ScreenPlayer:
             self.vid.toggle_pause()
 
     def onScale(self, val):
-        print('scale onScale ->', val)
+        # print('scale onScale ->', val)
+        if not self.vid:
+            return
         self.vid.seek(pts=float(val))
-        #self.var_t.set(v)
+        # self.var_t.set(v)
 
     def replay(self):
-        if self.var_t.get() == self.scale.get():
-            self.newplay()
+        if not self.vid:
+            return
+        if self.val == 'paused':
+            self.vid.seek(pts=0.01)
+            self.vid.toggle_pause()
         else:
             self.vid.seek(pts=0.01)
         pass
@@ -132,17 +169,21 @@ class ScreenPlayer:
  
     def update(self):
         # Get a frame from the video source
-        val, pts, frame = self.vid.get_frame()
+        if not self.vid:
+            self.window.after(self.delay, self.update)
+            return
+        self.val, self.pts, frame = self.vid.get_frame()
 
         if frame is not None:
             self.photo = ImageTk.PhotoImage(frame)
             self.canvas.delete('all') # TODO: veamos que pasa con esto....
             self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
-            self.var_t.set(pts)
+            self.var_t.set(self.pts)
 
         self.window.after(self.delay, self.update)
 
 
 if __name__ == '__main__':
     # Create a window and pass it to the Application object
-    ScreenPlayer(tk.Tk(), "Tkinter and ffpyplayer", video_source='_Work/tem.mp4')
+    source = '/media/hernani/WDatos/Share/afhernani.com/embed/_Work/dw11222.mp4'
+    ScreenPlayer(tk.Tk(), "Tkinter and ffpyplayer", video_source=None)
