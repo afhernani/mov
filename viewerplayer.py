@@ -19,6 +19,8 @@ class ScreenPlayer:
         self.window['bg'] = 'Black'
         self.window.resizable(width=False, height=False)
         self.photos = Photos()
+        # self.window.call('wm', 'iconphoto', self.window, self.photos._apply)
+        self.window.wm_iconphoto(True, self.photos._apply)
         self.dirImages = '.'
         self.video_source = video_source
         w = 350; h = 230; pts = 100.0
