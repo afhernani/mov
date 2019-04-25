@@ -34,6 +34,7 @@ class ScreenPlayer:
                 h = self.vid.h
                 pts = self.vid.duration
             except Exception as e:
+                print(e)
                 self.vid = None
         # Create a canvas that can fit the above video source size
         self.canvas = tk.Canvas(window, width = w, height = h)
@@ -89,7 +90,8 @@ class ScreenPlayer:
         else:
             dirpath = os.path.dirname(self.video_source)
         file = filedialog.askopenfile(initialdir=dirpath, title='select file', 
-                                        filetypes={('flv','*.flv'), ('mp4','*.mp4')}, 
+                                        filetypes={('flv','*.flv'), ('mp4','*.mp4'),
+                                        ('avi','*.avi'), ('mpg','*.mpg')}, 
                                         defaultextension='*.mp4')
         print(file)
         if not file == None:
