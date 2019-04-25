@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 from tkinter import *
+import os
 
 class Photos():
     def __init__(self):
-        self._play = PhotoImage(file='Images/play_b.png')
-        self._pause = PhotoImage(file='Images/pause_b.png')
-        self._snapshot = PhotoImage(file= 'Images/snapshot_b.png')
-        self._repeat = PhotoImage(file='Images/repeat_b.png')
-        self._open = PhotoImage(file='Images/open_b.png')
+        self.dirname = os.path.abspath(__file__)
+        print(self.dirname)
+        self.dirname = os.path.dirname(self.dirname)
+        print(self.dirname)
+        self._play = PhotoImage(file=os.path.join(self.dirname, 'Images/play_b.png'))
+        self._pause = PhotoImage(file=os.path.join(self.dirname, 'Images/pause_b.png'))
+        self._snapshot = PhotoImage(file=os.path.join(self.dirname, 'Images/snapshot_b.png'))
+        self._repeat = PhotoImage(file=os.path.join(self.dirname, 'Images/repeat_b.png'))
+        self._open = PhotoImage(file=os.path.join(self.dirname, 'Images/open_b.png'))
 
+
+if __name__ == '__main__':
+    root = Tk()
+    p = Photos()
