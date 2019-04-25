@@ -18,6 +18,7 @@ class ScreenPlayer:
         self.window.title(window_title)
         self.window['bg'] = 'Black'
         self.window.resizable(width=False, height=False)
+        self.photo = None
         self.photos = Photos()
         # self.window.call('wm', 'iconphoto', self.window, self.photos._apply)
         self.window.wm_iconphoto(True, self.photos._apply)
@@ -65,6 +66,10 @@ class ScreenPlayer:
             # After it is called once, the update method will be automatically called every delay milliseconds
             self.delay = self.vid.f_rate
             self.btn_toogle_pause['image'] = self.photos._play
+        else:
+            self.canvas.create_image(0, 0, image = self.photos._logo, anchor = tk.NW)
+            self.canvas.configure(width = self.photos._logo.width(),
+                                    height=self.photos._logo.height())
         self.val = None
         self.pts = None
         self.update()
