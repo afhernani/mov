@@ -7,6 +7,7 @@ from PIL import ImageTk
 import time
 import os
 from videostream import VideoStream
+from photos import Photos
 
 __version__ = '1.1'
 
@@ -17,31 +18,38 @@ class ScreenPlayer:
         self.window.title(window_title)
         self.window['bg'] = 'Black'
         self.window.resizable(width=False, height=False)
-        self.dirImages = ''
+        self.photos = Photos()
+        self.dirImages = '.'
         self.video_source = video_source
         w = 350; h = 230; pts = 100.0
         self.vid = None
         if self.video_source is not None:
             # open video source (by default this will try to open the computer webcam)
-            self.vid = VideoStream(self.video_source)
-            w = self.vid.w
-            h = self.vid.h
-            pts = self.vid.duration
-        
+            try:
+                self.vid = VideoStream(self.video_source)
+                w = self.vid.w
+                h = self.vid.h
+                pts = self.vid.duration
+            except Exception as e:
+                self.vid = None
         # Create a canvas that can fit the above video source size
         self.canvas = tk.Canvas(window, width = w, height = h)
         self.canvas.pack()
         # Button that lets the user take a snapshot
         self.btn_snapshot=tk.Button(window, text="Snapshot", command=self.snapshot)
+        self.btn_snapshot['image'] = self.photos._snapshot 
         self.btn_snapshot.pack(side='left')
         # Button open
         self.btn_open = tk.Button(window, text='...', command=self.open_file)
+        self.btn_open['image'] = self.photos._open
         self.btn_open.pack(side='right')
         # Button replay
         self.btn_replay = tk.Button(window, text=">>", command=self.replay)
+        self.btn_replay['image'] = self.photos._repeat
         self.btn_replay.pack(side='right')
         # Button play-pausa
         self.btn_toogle_pause = tk.Button(window, text="[]", command=self.toogle_pause)
+        self.btn_toogle_pause['image'] = self.photos._pause
         self.btn_toogle_pause.pack(side='right')
         # Slade
         self.var_t = tk.DoubleVar()
@@ -52,6 +60,7 @@ class ScreenPlayer:
         if self.video_source is not None:
             # After it is called once, the update method will be automatically called every delay milliseconds
             self.delay = self.vid.f_rate
+            self.btn_toogle_pause['image'] = self.photos._play
         self.val = None
         self.pts = None
         self.update()
@@ -92,10 +101,10 @@ class ScreenPlayer:
         if not self.vid:
             return
         if self.val =='paused':
-            self.btn_toogle_pause.configure(text='>')
+            self.btn_toogle_pause['image'] = self.photos._play
             self.vid.toggle_pause()
         else:
-            self.btn_toogle_pause.configure(text='[]')
+            self.btn_toogle_pause['image'] = self.photos._pause
             self.vid.toggle_pause()
 
     def onScale(self, val):
@@ -117,6 +126,7 @@ class ScreenPlayer:
 
     def newplay(self):
         ''' get replay '''
+        self.btn_toogle_pause['image'] = self.photos._play
         self.vid = VideoStream(self.video_source)
         self.delay = self.vid.f_rate
         # valores de la barra.
@@ -137,6 +147,8 @@ class ScreenPlayer:
         '''
         # Get a frame from the video source
         #frame = self.vid.get_frame()[2]
+        if not self.vid:
+            return
         frame = self.vid.imagen
         if frame is None:
             print('the video stream is closed')
