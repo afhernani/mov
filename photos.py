@@ -9,7 +9,7 @@ class Photos():
         self.dirname = os.path.dirname(self.dirname)
         print(self.dirname)
         self._apply = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/apply_b.png'))
-        self._logo = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/iron.png'))
+        self._logo = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/flash.png'))
         self._play = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/play_b.png'))
         self._pause = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/pause_b.png'))
         self._snapshot = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/snapshot_b.png'))
