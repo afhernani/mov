@@ -8,6 +8,7 @@ class Photos():
         print(self.dirname)
         self.dirname = os.path.dirname(self.dirname)
         print(self.dirname)
+        self._apply = PhotoImage(file=os.path.join(self.dirname, 'Images/apply_b.png'))
         self._play = PhotoImage(file=os.path.join(self.dirname, 'Images/play_b.png'))
         self._pause = PhotoImage(file=os.path.join(self.dirname, 'Images/pause_b.png'))
         self._snapshot = PhotoImage(file=os.path.join(self.dirname, 'Images/snapshot_b.png'))
