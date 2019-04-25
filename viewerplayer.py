@@ -22,6 +22,7 @@ class ScreenPlayer:
         self.dirImages = '.'
         self.video_source = video_source
         w = 350; h = 230; pts = 100.0
+        self.active_scale = False
         self.vid = None
         if self.video_source is not None:
             # open video source (by default this will try to open the computer webcam)
@@ -111,7 +112,13 @@ class ScreenPlayer:
         # print('scale onScale ->', val)
         if not self.vid:
             return
-        self.vid.seek(pts=float(val))
+        try:
+            self.active_scale = False
+            self.vid.seek(pts=float(val))
+            self.active_scale = True
+        except Exception as e:
+            print(e)
+            self.active_scale = True
         # self.var_t.set(v)
 
     def replay(self):
@@ -190,7 +197,8 @@ class ScreenPlayer:
             self.photo = ImageTk.PhotoImage(frame)
             self.canvas.delete('all') # TODO: veamos que pasa con esto....
             self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
-            self.var_t.set(self.pts)
+            if not self.active_scale:
+                self.var_t.set(self.pts)
 
         self.window.after(self.delay, self.update)
 
