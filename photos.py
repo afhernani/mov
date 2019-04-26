@@ -15,6 +15,7 @@ class Photos():
         self._snapshot = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/snapshot_b.png'))
         self._repeat = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/repeat_b.png'))
         self._open = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/open_b.png'))
+        self._volume = tk.PhotoImage(file=os.path.join(self.dirname, 'Images/sound_b.png'))
 
 
 if __name__ == '__main__':
