@@ -9,6 +9,8 @@ import os
 from videostream import VideoStream
 from photos import Photos
 
+__author__ = 'Hernani Aleman Ferraz'
+__email__ = 'afhernani@gmail.com'
 __version__ = '1.1'
 
 class ScreenPlayer:

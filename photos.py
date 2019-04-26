@@ -2,6 +2,10 @@
 import tkinter as tk
 import os
 
+__author__ = 'Hernani Aleman Ferraz'
+__email__ = 'afhernani@gmail.com'
+__version__ = '1.1'
+
 class Photos():
     def __init__(self):
         self.dirname = os.path.abspath(__file__)

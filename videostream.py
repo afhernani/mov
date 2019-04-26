@@ -2,16 +2,22 @@
 # -*- coding: utf-8 -*-
 
 from ffpyplayer.player import MediaPlayer
+from ffpyplayer.pic import pic
 from PIL import Image
 import time
 import os
 
-__version__ = '1.0'
+__author__ = 'Hernani Aleman Ferraz'
+__email__ = 'afhernani@gmail.com'
+__version__ = '1.1'
 
 class VideoStream:
     def __init__(self, video_source=0):
         ff_opts = {'paused' : True} # Audio options
         self.video_surce = video_source
+        # variables size imagen
+        self.original_size = None
+        self.new_size = None
         # Open the video source
         self.player = MediaPlayer(video_source, ff_opts=ff_opts)
         # TODO: colocar pausa de tiempo para cargas mediaplayer y obtener los datos
@@ -45,11 +51,27 @@ class VideoStream:
             else:
                 _imagen, self.pts = self.l_frame
                 print('pts ->', self.pts)
+                self.original_size = _imagen.get_size()
                 arr = _imagen.to_memoryview()[0] # array image
                 self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
                 # self.imagen.show()
                 cond = False
-        
+
+    def get_original_size(self):
+        '''
+        return (w, h) imagen
+        or None is not stablished
+        '''
+        return self.original_size
+
+    def set_new_size(self, size=None):
+        '''
+        set the new size imagen return
+        size = (w, h)
+        '''
+        if size is not None:
+            self.new_size = size
+
 
     def get_frame(self):
         '''
