@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ffpyplayer.player import MediaPlayer
-from ffpyplayer.pic import pic
+from ffpyplayer import pic
 from PIL import Image
 import time
 import os
@@ -53,9 +53,35 @@ class VideoStream:
                 print('pts ->', self.pts)
                 self.original_size = _imagen.get_size()
                 arr = _imagen.to_memoryview()[0] # array image
-                self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
+                self.imagen = Image.frombytes("RGB", self.original_size, arr.memview)
                 # self.imagen.show()
                 cond = False
+
+    def resize_imagen(self, img_rs, size=None):
+        # si size no es none actualiza new_size
+        if size:
+            self.new_size = size
+        # the same image
+        if self.original_size == self.new_size:
+            self.new_size = None # save operations
+            return img_rs
+        # if player not initializade return None imagen
+        if not self.player:
+            return None
+        if img_rs is not None:
+            try:
+                size = img_rs.get_size()
+                sws = None
+                if self.new_size[0] > self.new_size[1]:
+                    sws = pic.SWScale(size[0], size[1], img_rs.get_pixel_format(), ow=self.new_size[0])
+                else:
+                    sws = pic.SWScale(size[0], size[1], img_rs.get_pixel_format(), oh=self.new_size[1])
+                img_res = sws.scale(img_rs)
+                return img_res
+            except Exception as ex:
+                print('>>videostream: resize_imagen: ->', ex)
+                img_rs = None
+            return img_rs 
 
     def get_original_size(self):
         '''
@@ -91,9 +117,12 @@ class VideoStream:
             return self.val, None, None
         else:
             _imagen, self.pts = self.l_frame
+            if self.new_size is not None:
+                _imagen = self.resize_imagen(_imagen)
+            size = _imagen.get_size()
             arr = _imagen.to_memoryview()[0] # array image
-            self.imagen = Image.frombytes("RGB", (self.w, self.h), arr.memview)
-            # self.imagen.show()
+            self.imagen = Image.frombytes("RGB", size, arr.memview)
+            # print('>>> videostream::get_frame()::self.pts ->', self.pts)
             return self.val, self.pts, self.imagen
         
 
@@ -111,7 +140,6 @@ class VideoStream:
         if not pts:
             return
         self.player.seek(pts, relative=False, accurate=False)
-        pass
 
     def snapshot(self, road=None):
         '''
@@ -119,8 +147,9 @@ class VideoStream:
         '''
         img = self.l_frame[0]
         if img is not None:
+            size = img.get_size()
             arr = img.to_memoryview()[0] # array image
-            img = Image.frombytes("RGB", (self.w, self.h), arr.memview)
+            img = Image.frombytes("RGB", size, arr.memview)
             # vamos a guardar esto.
             time_str = time.strftime("%d-%m-%Y-%H-%M-%S")
             frame_name  = f"frame-{time_str}.jpg"

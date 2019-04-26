@@ -27,7 +27,7 @@ class ScreenPlayer:
         self.window.wm_iconphoto(True, self.photos._apply)
         self.dirImages = '.'
         self.video_source = video_source
-        w = 350; h = 230; pts = 100.0
+        w = 350; h = 230; self.duracion = 100.0
         self.active_scale = False
         self.vid = None
         if self.video_source is not None:
@@ -36,7 +36,7 @@ class ScreenPlayer:
                 self.vid = VideoStream(self.video_source)
                 w = self.vid.w
                 h = self.vid.h
-                pts = self.vid.duration
+                self.duracion = self.vid.duration
                 self.soundvar.set(self.vid.player.get_volume())
             except Exception as e:
                 print(e)
@@ -68,7 +68,7 @@ class ScreenPlayer:
         self.btn_toogle_pause.pack(side='right')
         # Slade
         self.var_t = tk.DoubleVar()
-        self.scale = tk.Scale(window, from_=0.0, to= pts, showvalue=0, orient='horizontal', variable=self.var_t, 
+        self.scale = tk.Scale(window, from_=0.0, to= self.duracion, showvalue=0, orient='horizontal', variable=self.var_t, 
                         resolution=0.2, sliderrelief='flat', command=self.onScale )
         self.scale.pack(side='left', fill='x', expand=1)
         self.delay = 16
@@ -95,8 +95,8 @@ class ScreenPlayer:
     def soundvar_adjust(self, *args):
         print('sound adjust ->', self.soundvar.get())
         if self.vid:
-            print('if self.vid:')
-            self.vid.player.set_volume(float(self.soundvar.get()))
+            print('if self.vid: soundvar_adjust')
+            self.vid.player.set_volume(self.soundvar.get())
 
     def isurl(self, tip=None):
         '''
@@ -141,16 +141,16 @@ class ScreenPlayer:
             self.vid.toggle_pause()
 
     def onScale(self, val):
-        # print('scale onScale ->', val)
+        # print('>> scale onScale type val ->', type(val), val)
         if not self.vid:
             return
         try:
-            self.active_scale = False
-            self.vid.seek(pts=float(val))
             self.active_scale = True
+            self.vid.seek(pts=float(val))
+            self.active_scale = False
         except Exception as e:
             print(e)
-            self.active_scale = True
+            self.active_scale = False
         # self.var_t.set(v)
 
     def replay(self):
@@ -165,12 +165,22 @@ class ScreenPlayer:
 
     def newplay(self):
         ''' get replay '''
+        # put image play_b in btn_toogle_pause
         self.btn_toogle_pause['image'] = self.photos._play
+        # load video stream
         self.vid = VideoStream(self.video_source)
+        # set delay using
         self.delay = self.vid.f_rate
-        # valores de la barra.
-        self.var_t.set(0.0)
-        self.scale.configure(to=self.vid.duration)
+        # set scale value.
+        self.var_t.set(0.1)
+        # get and set duration video stream
+        self.duracion = self.vid.duration
+        # print time duration
+        print('>> newplay: self.duracion ->', self.duracion)
+        # set value maximun scale to
+        self.scale.configure(to=self.duracion)
+        # print configure values scale
+        print('>> self.scale.configure ->', self.scale)
         # ajuste valores de sonido al nivel seleccionado.
         if self.soundvar.get() == 0.3: # reference value
             self.soundvar.set(self.vid.player.get_volume())
@@ -234,6 +244,7 @@ class ScreenPlayer:
             self.photo = ImageTk.PhotoImage(frame)
             self.canvas.delete('all') # TODO: veamos que pasa con esto....
             self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
+            # print('>>> self.active_scale:', self.active_scale)
             if not self.active_scale:
                 self.var_t.set(self.pts)
 
