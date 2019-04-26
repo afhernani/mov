@@ -21,6 +21,7 @@ class ScreenPlayer:
         self.photo = None
         self.photos = Photos()
         # self.window.call('wm', 'iconphoto', self.window, self.photos._apply)
+        self.soundvar = tk.DoubleVar(value=0.3)
         self.window.wm_iconphoto(True, self.photos._apply)
         self.dirImages = '.'
         self.video_source = video_source
@@ -34,9 +35,12 @@ class ScreenPlayer:
                 w = self.vid.w
                 h = self.vid.h
                 pts = self.vid.duration
+                self.soundvar.set(self.vid.player.get_volume())
             except Exception as e:
                 print(e)
                 self.vid = None
+        # event changed de volume
+        self.soundvar.trace('w', self.soundvar_adjust)
         # Create a canvas that can fit the above video source size
         self.canvas = tk.Canvas(window, width = w, height = h)
         self.canvas.pack()
@@ -48,6 +52,10 @@ class ScreenPlayer:
         self.btn_open = tk.Button(window, text='...', command=self.open_file)
         self.btn_open['image'] = self.photos._open
         self.btn_open.pack(side='right')
+        # button volum
+        self.btn_volume = tk.Button(window, text='volume', command=self.open_adjust_volumen)
+        self.btn_volume['image'] = self.photos._volume
+        self.btn_volume.pack(side='right')
         # Button replay
         self.btn_replay = tk.Button(window, text=">>", command=self.replay)
         self.btn_replay['image'] = self.photos._repeat
@@ -75,6 +83,19 @@ class ScreenPlayer:
         self.update()
         self.window.mainloop()
     
+    def open_adjust_volumen(self):
+        from overpanel import Over
+        param = {'textvariable': self.soundvar}
+        dialog = Over(master=self.window, cnf=param)
+        dialog.mainloop()
+        pass
+    
+    def soundvar_adjust(self, *args):
+        print('sound adjust ->', self.soundvar.get())
+        if self.vid:
+            print('if self.vid:')
+            self.vid.player.set_volume(float(self.soundvar.get()))
+
     def isurl(self, tip=None):
         '''
         Return bolean true si existe and it's ends with
@@ -148,6 +169,11 @@ class ScreenPlayer:
         # valores de la barra.
         self.var_t.set(0.0)
         self.scale.configure(to=self.vid.duration)
+        # ajuste valores de sonido al nivel seleccionado.
+        if self.soundvar.get() == 0.3: # reference value
+            self.soundvar.set(self.vid.player.get_volume())
+        else:
+            self.vid.player.set_volume(float(self.soundvar.get()))
         # dimension vertical ventana.
         h = self.btn_open.winfo_height()
         h_f = int(self.vid.h + h)
