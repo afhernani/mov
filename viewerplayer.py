@@ -69,8 +69,10 @@ class ScreenPlayer:
         # Slade
         self.var_t = tk.DoubleVar()
         self.scale = tk.Scale(window, from_=0.0, to= self.duracion, showvalue=0, orient='horizontal', variable=self.var_t, 
-                        resolution=0.2, sliderrelief='flat', command=self.onScale )
+                        resolution=0.3, sliderrelief='flat', command=self.onScale )
         self.scale.pack(side='left', fill='x', expand=1)
+        self.scale.bind('<ButtonPress-1>', self.scale_button_press)
+        self.scale.bind('<ButtonRelease-1>', self.scale_button_release)
         self.delay = 16
         if self.video_source is not None:
             # After it is called once, the update method will be automatically called every delay milliseconds
@@ -84,6 +86,16 @@ class ScreenPlayer:
         self.pts = None
         self.update()
         self.window.mainloop()
+    
+    def scale_button_press(self, event):
+        print('>> scale_button_press')
+        self.active_scale = True
+        pass
+    
+    def scale_button_release(self, event):
+        print('>> scale_button_release')
+        self.active_scale = False
+        pass
     
     def open_adjust_volumen(self):
         from overpanel import Over
@@ -145,12 +157,13 @@ class ScreenPlayer:
         if not self.vid:
             return
         try:
-            self.active_scale = True
+            # self.active_scale = True
             self.vid.seek(pts=float(val))
-            self.active_scale = False
+            time.sleep(0.03)
+            # self.active_scale = False
         except Exception as e:
             print(e)
-            self.active_scale = False
+            # self.active_scale = False
         # self.var_t.set(v)
 
     def replay(self):
@@ -194,6 +207,7 @@ class ScreenPlayer:
         # rescale all the objects tagged with the "all" tag
         cad = f'{w_f}x{h_f}'
         self.window.geometry(cad)
+        self.window.update()
 
     def snapshot(self):
         '''
@@ -240,7 +254,7 @@ class ScreenPlayer:
             return
         self.val, self.pts, frame = self.vid.get_frame()
 
-        if frame is not None:
+        if frame is not None and not self.active_scale:
             self.photo = ImageTk.PhotoImage(frame)
             self.canvas.delete('all') # TODO: veamos que pasa con esto....
             self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
@@ -254,4 +268,4 @@ class ScreenPlayer:
 if __name__ == '__main__':
     # Create a window and pass it to the Application object
     source = '/media/hernani/WDatos/Share/afhernani.com/embed/_Work/dw11222.mp4'
-    ScreenPlayer(tk.Tk(), "Tkinter and ffpyplayer", video_source=None)
+    ScreenPlayer(tk.Tk(), "Tkinter and ffpyplayer < Flash player >", video_source=None)
