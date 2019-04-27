@@ -9,6 +9,7 @@ import os
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
+__apply__ = 'Flash - player'
 __version__ = '1.1'
 
 class VideoStream:
