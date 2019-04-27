@@ -91,12 +91,10 @@ class ScreenPlayer:
     def scale_button_press(self, event):
         print('>> scale_button_press')
         self.active_scale = True
-        pass
     
     def scale_button_release(self, event):
         print('>> scale_button_release')
         self.active_scale = False
-        pass
     
     def open_adjust_volumen(self):
         from overpanel import Over
@@ -260,8 +258,8 @@ class ScreenPlayer:
             self.canvas.delete('all') # TODO: veamos que pasa con esto....
             self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
             # print('>>> self.active_scale:', self.active_scale)
-            if not self.active_scale:
-                self.var_t.set(self.pts)
+            # if not self.active_scale:
+            self.var_t.set(self.pts)
 
         self.window.after(self.delay, self.update)
 
