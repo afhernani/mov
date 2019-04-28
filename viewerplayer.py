@@ -288,7 +288,7 @@ class ScreenPlayer(tk.Frame):
                 self.imagen_copy = self.imagen.copy()
                 w = self.canvas.winfo_width()
                 h = self.canvas.winfo_height()
-                self.imagen = self.imagen_copy.resize((w, h))
+                self.imagen = self.imagen_copy.resize((w, h), Image.ANTIALIAS)
                 self.photo = ImageTk.PhotoImage(self.imagen)
                 self.canvas_tags = self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
                 # print('>>> self.active_scale:', self.active_scale)
