@@ -13,12 +13,9 @@ __apply__ = 'Flash - player'
 __version__ = '1.1'
 
 class VideoStream:
-    def __init__(self, video_source=0):
+    def __init__(self, video_source=None):
         ff_opts = {'paused' : True} # Audio options
         self.video_surce = video_source
-        # variables size imagen
-        self.original_size = None
-        self.new_size = None
         # Open the video source
         self.player = MediaPlayer(video_source, ff_opts=ff_opts)
         # TODO: colocar pausa de tiempo para cargas mediaplayer y obtener los datos
@@ -50,55 +47,12 @@ class VideoStream:
             elif self.l_frame is None:
                 time.sleep(0.01)
             else:
-                _imagen, self.pts = self.l_frame
+                self._imagen, self.pts = self.l_frame
                 print('pts ->', self.pts)
-                self.original_size = _imagen.get_size()
-                arr = _imagen.to_memoryview()[0] # array image
-                self.imagen = Image.frombytes("RGB", self.original_size, arr.memview)
+                # arr = self._imagen.to_memoryview()[0] # array image
+                # self.imagen = Image.frombytes("RGB", self.original_size, arr.memview)
                 # self.imagen.show()
                 cond = False
-
-    def resize_imagen(self, img_rs, size=None):
-        # si size no es none actualiza new_size
-        if size:
-            self.new_size = size
-        # the same image
-        if self.original_size == self.new_size:
-            self.new_size = None # save operations
-            return img_rs
-        # if player not initializade return None imagen
-        if not self.player:
-            return None
-        if img_rs is not None:
-            try:
-                size = img_rs.get_size()
-                sws = None
-                if self.new_size[0] > self.new_size[1]:
-                    sws = pic.SWScale(size[0], size[1], img_rs.get_pixel_format(), ow=self.new_size[0])
-                else:
-                    sws = pic.SWScale(size[0], size[1], img_rs.get_pixel_format(), oh=self.new_size[1])
-                img_res = sws.scale(img_rs)
-                return img_res
-            except Exception as ex:
-                print('>>videostream: resize_imagen: ->', ex)
-                img_rs = None
-            return img_rs 
-
-    def get_original_size(self):
-        '''
-        return (w, h) imagen
-        or None is not stablished
-        '''
-        return self.original_size
-
-    def set_new_size(self, size=None):
-        '''
-        set the new size imagen return
-        size = (w, h)
-        '''
-        if size is not None:
-            self.new_size = size
-
 
     def get_frame(self):
         '''
@@ -117,14 +71,29 @@ class VideoStream:
             time.sleep(0.01)
             return self.val, None, None
         else:
-            _imagen, self.pts = self.l_frame
-            if self.new_size is not None:
-                _imagen = self.resize_imagen(_imagen)
-            size = _imagen.get_size()
-            arr = _imagen.to_memoryview()[0] # array image
-            self.imagen = Image.frombytes("RGB", size, arr.memview)
+            import math
+            self._imagen, self.pts = self.l_frame
+            return self.val, self.pts, self._imagen
+            # w, h = self._imagen.get_size()
+            # linesize = [int(math.ceil(w * 3 / 32.) * 32)]
+            # self._imagen = pic.Image(plane_buffers=[bytes(b' ') * (h * linesize[0])],
+            #             pix_fmt=self._imagen.get_pixel_format(), size=(w, h), linesize=linesize)
+            # self._imagen.get_linesizes(keep_align=True)
+            
+            # if self.new_size is not None:
+            #     sws = None
+            #     n_w , n_h = self.new_size
+            #     if n_w > n_h:
+            #         sws = pic.SWScale(w, h, self._imagen.get_pixel_format(), oh=n_h)
+            #     else:
+            #         sws = pic.SWScale(w, h, self._imagen.get_pixel_format(), ow=n_w)
+            #     self._imagen = sws.scale(self._imagen)
+
+            # size = self._imagen.get_size()
+            # arr = self._imagen.to_memoryview()[0] # array image
+            # self.imagen = Image.frombytes("RGB", size, arr.memview)
             # print('>>> videostream::get_frame()::self.pts ->', self.pts)
-            return self.val, self.pts, self.imagen
+
         
 
     def toggle_pause(self):

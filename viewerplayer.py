@@ -3,7 +3,7 @@
 
 import tkinter as tk
 from tkinter import filedialog
-from PIL import ImageTk
+from PIL import ImageTk, Image
 import time
 import os
 from videostream import VideoStream
@@ -14,20 +14,24 @@ __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
 __version__ = '1.1'
 
-class ScreenPlayer:
-    def __init__(self, window, window_title, video_source=None):
+class ScreenPlayer(tk.Frame):
+    
+    def __init__(self, master=None, title=None, video=None):
         ''' Initialice window app '''
-        self.window = window
-        self.window.title(window_title)
-        self.window['bg'] = 'Black'
-        self.window.resizable(width=False, height=False)
+        super().__init__(master)        
+        self.master = master 
+        self.pack(fill=tk.BOTH, expand=1)
+        self.master.title(title)
+        self.master['bg'] = 'Black'
+        # self.window.resizable(width=False, height=False)
+        self.n_size = None
         self.photo = None
         self.photos = Photos()
-        # self.window.call('wm', 'iconphoto', self.window, self.photos._apply)
-        self.soundvar = tk.DoubleVar(value=0.3)
-        self.window.wm_iconphoto(True, self.photos._apply)
+        # self.master.call('wm', 'iconphoto', self.master, self.photos._apply)
+        self.soundvar = tk.DoubleVar(value=0.9)
+        self.master.wm_iconphoto(True, self.photos._apply)
         self.dirImages = '.'
-        self.video_source = video_source
+        self.video_source = video
         w = 350; h = 230; self.duracion = 100.0
         self.active_scale = False
         self.vid = None
@@ -45,49 +49,77 @@ class ScreenPlayer:
         # event changed de volume
         self.soundvar.trace('w', self.soundvar_adjust)
         # Create a canvas that can fit the above video source size
-        self.canvas = tk.Canvas(window, width = w, height = h)
-        self.canvas.pack()
+        self.canvas = tk.Canvas(self, bg='red')
+        # contenedor de controles
+        self.conten_controls = tk.LabelFrame(self, height=4)
         # Button that lets the user take a snapshot
-        self.btn_snapshot=tk.Button(window, text="Snapshot", command=self.snapshot)
+        self.btn_snapshot=tk.Button(self.conten_controls, text="Snapshot", command=self.snapshot)
         self.btn_snapshot['image'] = self.photos._snapshot 
         self.btn_snapshot.pack(side='left')
         # Button open
-        self.btn_open = tk.Button(window, text='...', command=self.open_file)
+        self.btn_open = tk.Button(self.conten_controls, text='...', command=self.open_file)
         self.btn_open['image'] = self.photos._open
         self.btn_open.pack(side='right')
         # button volum
-        self.btn_volume = tk.Button(window, text='volume', command=self.open_adjust_volumen)
+        self.btn_volume = tk.Button(self.conten_controls, text='volume', command=self.open_adjust_volumen)
         self.btn_volume['image'] = self.photos._volume
         self.btn_volume.pack(side='right')
         # Button replay
-        self.btn_replay = tk.Button(window, text=">>", command=self.replay)
+        self.btn_replay = tk.Button(self.conten_controls, text=">>", command=self.replay)
         self.btn_replay['image'] = self.photos._repeat
         self.btn_replay.pack(side='right')
         # Button play-pausa
-        self.btn_toogle_pause = tk.Button(window, text="[]", command=self.toogle_pause)
+        self.btn_toogle_pause = tk.Button(self.conten_controls, text="[]", command=self.toogle_pause)
         self.btn_toogle_pause['image'] = self.photos._pause
         self.btn_toogle_pause.pack(side='right')
         # Slade
         self.var_t = tk.DoubleVar()
-        self.scale = tk.Scale(window, from_=0.0, to= self.duracion, showvalue=0, orient='horizontal', variable=self.var_t, 
+        self.scale = tk.Scale(self.conten_controls, from_=0.0, to= self.duracion, showvalue=0, orient='horizontal', variable=self.var_t, 
                         resolution=0.3, sliderrelief='flat', command=self.onScale )
         self.scale.pack(side='left', fill='x', expand=1)
         self.scale.bind('<ButtonPress-1>', self.scale_button_press)
         self.scale.bind('<ButtonRelease-1>', self.scale_button_release)
+        self.master.bind('<Configure>', self.master_on_resize)
+        # self.master.bind_all('<ButtonPress-1>', self.master_button_press)
+        # self.master.bind('<ButtonRelease-1>', self.master_button_release)
+        self.canvas.pack(side =tk.TOP, fill=tk.BOTH, expand=1)
+        self.conten_controls.pack(side='bottom', fill='x')
         self.delay = 16
         if self.video_source is not None:
-            # After it is called once, the update method will be automatically called every delay milliseconds
             self.delay = self.vid.f_rate
             self.btn_toogle_pause['image'] = self.photos._play
+            self.canvas_tags = None
         else:
-            self.canvas.create_image(0, 0, image = self.photos._logo, anchor = tk.NW)
-            self.canvas.configure(width = self.photos._logo.width(),
-                                    height=self.photos._logo.height())
+            w_f = self.photos._logo.width()
+            h_f = self.photos._logo.height()
+            self.canvas_tags = self.canvas.configure(width = w_f, height=h_f)
+            self.canvas.create_image(w_f/2, h_f/2, image = self.photos._logo, anchor='center', tags='img')
         self.val = None
         self.pts = None
         self.update()
-        self.window.mainloop()
+        self.master.geometry('422x624+629+231')
+        self._wxh = (422, 624)
+        self._twh = (629, 231)
+        self.master.mainloop()
     
+    def master_button_press(self, event):
+        print('>> master_button_press')
+
+    def master_button_release(self, event):
+        print('>> master_button_release')
+
+    def master_on_resize(self, event):
+        m_wxh = (event.x, event.y)
+        print('>> rezise:', m_wxh, self._wxh)
+        if self._wxh != m_wxh:
+            print('>> on_resize_master ')
+            self._wxh = m_wxh
+            self.master.configure(width=m_wxh[0], height=m_wxh[1])
+            h_c = self.conten_controls.winfo_height()
+            w = m_wxh[0] -2
+            h = m_wxh[1] - h_c -2
+            self.canvas.configure(width=w, height=h)
+            
     def scale_button_press(self, event):
         print('>> scale_button_press')
         self.active_scale = True
@@ -99,9 +131,8 @@ class ScreenPlayer:
     def open_adjust_volumen(self):
         from overpanel import Over
         param = {'textvariable': self.soundvar}
-        dialog = Over(master=self.window, cnf=param)
+        dialog = Over(master=self.master, cnf=param)
         dialog.mainloop()
-        pass
     
     def soundvar_adjust(self, *args):
         print('sound adjust ->', self.soundvar.get())
@@ -118,7 +149,7 @@ class ScreenPlayer:
             return False
         exten = ('.mp4', '.MP4', '.flv', '.FLV', '.mpg', '.avi')
         if os.path.exists(tip):
-            if source.endswith(exten):
+            if tip.endswith(exten):
                 return True
         return False
 
@@ -158,7 +189,6 @@ class ScreenPlayer:
         try:
             # self.active_scale = True
             self.vid.seek(pts=float(val))
-            time.sleep(0.03)
             # self.active_scale = False
         except Exception as e:
             print(e)
@@ -192,21 +222,18 @@ class ScreenPlayer:
         # set value maximun scale to
         self.scale.configure(to=self.duracion)
         # print configure values scale
-        print('>> self.scale.configure ->', self.scale)
+        # print('>> self.scale.configure ->', self.scale)
         # ajuste valores de sonido al nivel seleccionado.
-        if self.soundvar.get() == 0.3: # reference value
-            self.soundvar.set(self.vid.player.get_volume())
-        else:
-            self.vid.player.set_volume(float(self.soundvar.get()))
+        self.vid.player.set_volume(float(self.soundvar.get()))
         # dimension vertical ventana.
-        h = self.btn_open.winfo_height()
-        h_f = int(self.vid.h + h)
-        w_f = int(self.vid.w)
-        self.canvas.config(width=self.vid.w, height=self.vid.h)
-        # rescale all the objects tagged with the "all" tag
+        h = self.conten_controls.winfo_height()
+        h_f = self.vid.h + h + 2
+        w_f = self.vid.w + 2
         cad = f'{w_f}x{h_f}'
-        self.window.geometry(cad)
-        self.window.update()
+        self._width = w_f
+        self._height = h_f
+        self.master.geometry(cad)
+        self.canvas.config(width=self.vid.w, height=self.vid.h)
 
     def snapshot(self):
         '''
@@ -216,7 +243,7 @@ class ScreenPlayer:
         #frame = self.vid.get_frame()[2]
         if not self.vid:
             return
-        frame = self.vid.imagen
+        frame = self.imagen.copy()
         if frame is None:
             print('the video stream is closed')
             return
@@ -249,22 +276,30 @@ class ScreenPlayer:
     def update(self):
         # Get a frame from the video source
         if not self.vid:
-            self.window.after(self.delay, self.update)
-            return
-        self.val, self.pts, frame = self.vid.get_frame()
+            pass
+        else:
+            self.val, self.pts, frame = self.vid.get_frame()
 
-        if frame is not None and not self.active_scale:
-            self.photo = ImageTk.PhotoImage(frame)
-            self.canvas.delete('all') # TODO: veamos que pasa con esto....
-            self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
-            # print('>>> self.active_scale:', self.active_scale)
-            # if not self.active_scale:
-            self.var_t.set(self.pts)
+            if frame is not None and not self.active_scale:
+                size = frame.get_size()
+                arr = frame.to_memoryview()[0] # array image
+                self.imagen = Image.frombytes("RGB", size, arr.memview)
+                self.canvas.delete(tk.ALL) # borra todos los objetos con ese tags....
+                self.imagen_copy = self.imagen.copy()
+                w = self.canvas.winfo_width()
+                h = self.canvas.winfo_height()
+                self.imagen = self.imagen_copy.resize((w, h))
+                self.photo = ImageTk.PhotoImage(self.imagen)
+                self.canvas_tags = self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
+                # print('>>> self.active_scale:', self.active_scale)
+                # if not self.active_scale:
+                self.var_t.set(self.pts)
 
-        self.window.after(self.delay, self.update)
+        self.master.after(self.delay, self.update)
 
 
 if __name__ == '__main__':
     # Create a window and pass it to the Application object
-    source = '/media/hernani/WDatos/Share/afhernani.com/embed/_Work/dw11222.mp4'
-    ScreenPlayer(tk.Tk(), "Tkinter and ffpyplayer < Flash player >", video_source=None)
+    root = tk.Tk()
+    source_v = '/media/hernani/WDatos/Share/afhernani.com/embed/_Work/dw11222.mp4'
+    ScreenPlayer(root, "Tkinter and ffpyplayer < Flash player >")
