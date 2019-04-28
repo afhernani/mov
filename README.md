@@ -25,5 +25,12 @@
     Version = 1.1
 ### Improvements:
     included scroll bar and buttons pause and restart and snapshot
-    start of the application without a source file,
+    start of the application without a source file, and resizing of
+    image when we act with the main window.
+## Version development.
+    Version = 1.2
+### Improvements:
+    - Avoid the reproduction of the distorted image, maintaining its 
+    scale proportion.
+    - Others ...
 
