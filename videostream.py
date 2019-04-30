@@ -14,7 +14,7 @@ __version__ = '1.2'
 
 class VideoStream:
     def __init__(self, video_source=None):
-        ff_opts = {'paused' : True} # Audio options
+        ff_opts = {'paused': True, 'autoexit': False}  # Audio options
         self.video_surce = video_source
         # Open the video source
         self.player = MediaPlayer(video_source, ff_opts=ff_opts)
