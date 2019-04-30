@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from PIL import ImageTk, Image
 import time
 import os
 from videostream import VideoStream
 from photos import Photos
 from utility import proportional_resizing
+import configparser
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
@@ -25,6 +26,8 @@ class ScreenPlayer(tk.Frame):
         self.pack(fill=tk.BOTH, expand=1)
         self.master.title(title)
         self.master['bg'] = 'Black'
+        self.master.protocol('WM_DELETE_WINDOW', self.confirmExit)
+        self.setingfile = 'flash_seting.ini'
         # self.window.resizable(width=False, height=False)
         self.n_size = None
         self.photo = None
@@ -32,7 +35,8 @@ class ScreenPlayer(tk.Frame):
         # self.master.call('wm', 'iconphoto', self.master, self.photos._apply)
         self.soundvar = tk.DoubleVar(value=0.9)
         self.master.wm_iconphoto(True, self.photos._apply)
-        self.dirImages = '.'
+        self.dirImages = None
+        self.dirpathmovies = tk.StringVar()  # directorio path video
         self.video_source = video
         w = 350; h = 230; self.duracion = 100.0
         self.active_scale = False
@@ -41,6 +45,7 @@ class ScreenPlayer(tk.Frame):
         if self.video_source is not None:
             # open video source (by default this will try to open the computer webcam)
             try:
+                self.dirpathmovies.set(os.path.dirname(self.video_source))
                 self.vid = VideoStream(self.video_source)
                 w = self.vid.w
                 h = self.vid.h
@@ -109,9 +114,47 @@ class ScreenPlayer(tk.Frame):
         self._wxh = (422, 624)
         self._twh = (629, 231)
       
+        self.get_init_status()
         self.update()
         self.master.mainloop()
     
+    def get_init_status(self):
+        '''
+        extract init status of app
+        Return:
+        '''
+        if not os.path.exists(self.setingfile):
+            return
+        config = configparser.RawConfigParser()
+        config.read(self.setingfile)
+        dirpathmovies = config.get('Setings', 'path_movies')
+        if os.path.exists(dirpathmovies):
+            self.dirpathmovies.set(dirpathmovies)
+            # inicializa la lista con directorio duardao
+        dirpathimages =config.get('Setings', 'path_images')
+        if os.path.exists(dirpathimages):
+            self.dirImages = dirpathmovies
+            # inicializa la lista con directorio duardao
+    
+    def set_init_status(self):
+        '''
+        write init status of app
+        Return:
+        '''
+        config = configparser.RawConfigParser()
+        config.add_section('Setings')
+        config.set('Setings', 'path_movies', self.dirpathmovies.get())
+        config.set('Setings', 'path_images', self.dirImages)
+        with open(self.setingfile, 'w') as configfile:
+            config.write(configfile)
+        print('Write config file')
+
+    def confirmExit(self):
+        if messagebox.askokcancel('Quit', 'Are you sure you want to exit?'):
+            self.master.quit()
+        self.set_init_status()
+        print('end process')
+
     def master_button_press(self, event):
         print('>> master_button_press')
 
@@ -193,10 +236,10 @@ class ScreenPlayer(tk.Frame):
 
     def open_file(self):
         ''' Open file with menu ... '''
-        if not self.video_source:
+        if self.dirpathmovies.get()=='':
             dirpath='.'
         else:
-            dirpath = os.path.dirname(self.video_source)
+            dirpath = self.dirpathmovies.get()
         file = filedialog.askopenfile(initialdir=dirpath, title='select file', 
                                         filetypes={('flv','*.flv'), ('mp4','*.mp4'),
                                         ('avi','*.avi'), ('mpg','*.mpg')}, 
@@ -205,6 +248,8 @@ class ScreenPlayer(tk.Frame):
         if not file == None:
             if os.path.exists(file.name):
                 self.video_source = file.name
+                self.dirpathmovies.set(file.name)
+                self.dirpathmovies.set(os.path.dirname(self.video_source))
                 self.newplay()
         
     def toogle_pause(self):
@@ -296,7 +341,7 @@ class ScreenPlayer(tk.Frame):
         options['filetypes'] = filetypes
         options['initialfile'] = filename
         options['title'] = title
-        if self.dirImages != '':
+        if self.dirImages is not None:
             options['initialdir'] = self.dirImages
         else:
             options['initialdir'] = os.getenv('HOME')
