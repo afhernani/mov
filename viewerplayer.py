@@ -8,6 +8,7 @@ import time
 import os
 from videostream import VideoStream
 from photos import Photos
+from utility import proportional_resizing
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
@@ -19,7 +20,8 @@ class ScreenPlayer(tk.Frame):
     def __init__(self, master=None, title=None, video=None):
         ''' Initialice window app '''
         super().__init__(master)        
-        self.master = master 
+        self.master = master
+        self.master.geometry('422x624+629+231') 
         self.pack(fill=tk.BOTH, expand=1)
         self.master.title(title)
         self.master['bg'] = 'Black'
@@ -35,6 +37,7 @@ class ScreenPlayer(tk.Frame):
         w = 350; h = 230; self.duracion = 100.0
         self.active_scale = False
         self.vid = None
+        self.val = 'paused'
         if self.video_source is not None:
             # open video source (by default this will try to open the computer webcam)
             try:
@@ -82,6 +85,7 @@ class ScreenPlayer(tk.Frame):
         self.master.bind('<Configure>', self.master_on_resize)
         # self.master.bind_all('<ButtonPress-1>', self.master_button_press)
         # self.master.bind('<ButtonRelease-1>', self.master_button_release)
+        # self.master.wm_withdraw()
         self.canvas.pack(side =tk.TOP, fill=tk.BOTH, expand=1)
         self.conten_controls.pack(side='bottom', fill='x')
         self.delay = 16
@@ -90,16 +94,22 @@ class ScreenPlayer(tk.Frame):
             self.btn_toogle_pause['image'] = self.photos._play
             self.canvas_tags = None
         else:
-            w_f = self.photos._logo.width()
-            h_f = self.photos._logo.height()
-            self.canvas_tags = self.canvas.configure(width = w_f, height=h_f)
-            self.canvas.create_image(w_f/2, h_f/2, image = self.photos._logo, anchor='center', tags='img')
+            self.imagen = self.photos._logo
+            w_f, h_f = self.imagen.size
+            # w_f, h_f = self.imagen.width(), self.imagen.height()
+            # # data = self.imagen_l.
+            # self.imagen_l_copy = Image.frombytes('RGB', self.imagen_l.size, data)
+            self.photo = ImageTk.PhotoImage(self.imagen)
+            self.canvas.configure(width = w_f, height=h_f)
+            self.canvas.create_image(w_f/2, h_f/2, image = self.photo, 
+                                        anchor='center', tags='img')
         self.val = None
         self.pts = None
-        self.update()
-        self.master.geometry('422x624+629+231')
+        #
         self._wxh = (422, 624)
         self._twh = (629, 231)
+      
+        self.update()
         self.master.mainloop()
     
     def master_button_press(self, event):
@@ -109,16 +119,44 @@ class ScreenPlayer(tk.Frame):
         print('>> master_button_release')
 
     def master_on_resize(self, event):
+        _ventana = event.widget
+        print(_ventana)
+        widget_size =(_ventana.winfo_width(), _ventana.winfo_height() )
+        if str(_ventana) == '.!screenplayer.!canvas':
+            print('>> canvas:')
         m_wxh = (event.x, event.y)
-        print('>> rezise:', m_wxh, self._wxh)
-        if self._wxh != m_wxh:
+        print('>> rezise:', m_wxh, self._wxh, 'widget_size:', widget_size)
+        if self._wxh != m_wxh and str(_ventana) == '.!screenplayer.!canvas' and m_wxh == (0, 0):
             print('>> on_resize_master ')
-            self._wxh = m_wxh
-            self.master.configure(width=m_wxh[0], height=m_wxh[1])
+            self._wxh = widget_size
+            # self.master.configure(width=m_wxh[0], height=m_wxh[1])
             h_c = self.conten_controls.winfo_height()
             w = m_wxh[0] -2
             h = m_wxh[1] - h_c -2
             self.canvas.configure(width=w, height=h)
+            # si es nulo self.vid or self.imagen is not None or self.vid.player.get_pause()
+            # print('wm_withdraw: ', self.master.wm_withdraw())
+            if self.vid is None or self.val =='paused':               
+                w = self.canvas.winfo_width()
+                h = self.canvas.winfo_height()
+                if w <= 0 or h <= 0:
+                    return
+                self.canvas.delete(tk.ALL) # borra todos los objetos con ese tags....
+                w_i, h_i = self.imagen.size
+                self.imagen_copy = self.imagen.copy()
+                if w/h >= 1 and w_i/h_i >=1:
+                    self.imagen_copy = proportional_resizing(self.imagen_copy, width=w)
+                elif w/h >= 1 and w_i/h_i < 1:
+                    self.imagen_copy = proportional_resizing(self.imagen_copy, height=w)
+                elif w/h < 1 and w_i/h_i >= 1:
+                    self.imagen_copy = proportional_resizing(self.imagen_copy, width=h)
+                elif w/h < 1 and w_i/h_i < 1:
+                    self.imagen_copy = proportional_resizing(self.imagen_copy, height=h)
+                else:
+                    # es w == h
+                    self.imagen_copy = self.imagen_copy.resize((w, h), Image.ANTIALIAS)
+                self.photo = ImageTk.PhotoImage(self.imagen_copy)
+                self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
             
     def scale_button_press(self, event):
         print('>> scale_button_press')
@@ -290,7 +328,7 @@ class ScreenPlayer(tk.Frame):
                 h = self.canvas.winfo_height()
                 self.imagen = self.imagen_copy.resize((w, h), Image.ANTIALIAS)
                 self.photo = ImageTk.PhotoImage(self.imagen)
-                self.canvas_tags = self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
+                self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
                 # print('>>> self.active_scale:', self.active_scale)
                 # if not self.active_scale:
                 self.var_t.set(self.pts)
