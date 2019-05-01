@@ -187,13 +187,9 @@ class ScreenPlayer(tk.Frame):
                 self.canvas.delete(tk.ALL) # borra todos los objetos con ese tags....
                 w_i, h_i = self.imagen.size
                 self.imagen_copy = self.imagen.copy()
-                if w/h >= 1 and w_i/h_i >=1:
+                if w_i/h_i >=1:
                     self.imagen_copy = proportional_resizing(self.imagen_copy, width=w)
-                elif w/h >= 1 and w_i/h_i < 1:
-                    self.imagen_copy = proportional_resizing(self.imagen_copy, height=w)
-                elif w/h < 1 and w_i/h_i >= 1:
-                    self.imagen_copy = proportional_resizing(self.imagen_copy, width=h)
-                elif w/h < 1 and w_i/h_i < 1:
+                elif w_i/h_i < 1:
                     self.imagen_copy = proportional_resizing(self.imagen_copy, height=h)
                 else:
                     # es w == h
