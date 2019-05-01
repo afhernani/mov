@@ -42,7 +42,38 @@ def proportional_resizing(image, width=-1, height=-1):
         return image
     except IndexError as ider:
         print(ider)
-    
+
+def image_adjustment(imagen, size=None):
+    '''
+    size = (w, h)
+    Image adjustment to a dimension frame width = w and height = h
+    Return None or imagen adjustment.
+    '''
+    if size is not None:
+        w, h = size
+        if h <= 0:
+            return None
+    else:
+        return None
+    if imagen is not None:
+        imagen_copy = imagen.copy()
+    w_i, h_i = imagen.size
+    r_sc = w/h
+    r_im = w_i/h_i
+    if r_im >=1:
+        if r_sc >= r_im:
+            imagen = proportional_resizing(imagen_copy, height=h)
+        else:
+            imagen = proportional_resizing(imagen_copy, width=w)
+    elif r_im < 1:
+        if r_sc < r_im:
+            imagen = proportional_resizing(imagen_copy, width=w)
+        else:
+            imagen = proportional_resizing(imagen_copy, height=h)
+    else:
+        imagen = imagen_copy.resize((w, h), Image.ANTIALIAS)
+    return imagen
+
 if __name__ == '__main__':
     image = Image.open('_Work/imagen/tumblr_oomj53OOUV1qkbpm3o1_1280.jpg')
     print('>> size original image:', image.size)
