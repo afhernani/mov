@@ -60,18 +60,22 @@ def image_adjustment(imagen, size=None):
     w_i, h_i = imagen.size
     r_sc = w/h
     r_im = w_i/h_i
-    if r_im >=1:
-        if r_sc >= r_im:
-            imagen = proportional_resizing(imagen_copy, height=h)
+    try:
+        if r_im >=1:
+            if r_sc >= r_im:
+                imagen = proportional_resizing(imagen_copy, height=h)
+            else:
+                imagen = proportional_resizing(imagen_copy, width=w)
+        elif r_im < 1:
+            if r_sc < r_im:
+                imagen = proportional_resizing(imagen_copy, width=w)
+            else:
+                imagen = proportional_resizing(imagen_copy, height=h)
         else:
-            imagen = proportional_resizing(imagen_copy, width=w)
-    elif r_im < 1:
-        if r_sc < r_im:
-            imagen = proportional_resizing(imagen_copy, width=w)
-        else:
-            imagen = proportional_resizing(imagen_copy, height=h)
-    else:
-        imagen = imagen_copy.resize((w, h), Image.ANTIALIAS)
+            imagen = imagen_copy.resize((w, h), Image.ANTIALIAS)
+    except IndexError as ider:
+        print(ider)
+        imagen = None
     return imagen
 
 if __name__ == '__main__':
