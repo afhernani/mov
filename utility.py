@@ -49,18 +49,18 @@ def image_adjustment(imagen, size=None):
     Image adjustment to a dimension frame width = w and height = h
     Return None or imagen adjustment.
     '''
-    if size is not None:
-        w, h = size
-        if h <= 0:
-            return None
-    else:
-        return None
-    if imagen is not None:
-        imagen_copy = imagen.copy()
-    w_i, h_i = imagen.size
-    r_sc = w/h
-    r_im = w_i/h_i
     try:
+        if size is not None:
+            w, h = size
+            if h <= 0:
+                return None
+        else:
+            return None
+        if imagen is not None:
+            imagen_copy = imagen.copy()
+        w_i, h_i = imagen.size
+        r_sc = w/h
+        r_im = w_i/h_i
         if r_im >=1:
             if r_sc >= r_im:
                 imagen = proportional_resizing(imagen_copy, height=h)
