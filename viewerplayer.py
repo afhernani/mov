@@ -133,7 +133,7 @@ class ScreenPlayer(tk.Frame):
             # inicializa la lista con directorio duardao
         dirpathimages =config.get('Setings', 'path_images')
         if os.path.exists(dirpathimages):
-            self.dirImages = dirpathmovies
+            self.dirImages = dirpathimages
             # inicializa la lista con directorio duardao
     
     def set_init_status(self):
@@ -248,7 +248,6 @@ class ScreenPlayer(tk.Frame):
         if not file == None:
             if os.path.exists(file.name):
                 self.video_source = file.name
-                self.dirpathmovies.set(file.name)
                 self.dirpathmovies.set(os.path.dirname(self.video_source))
                 self.newplay()
         
