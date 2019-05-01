@@ -9,6 +9,7 @@ import os
 from videostream import VideoStream
 from photos import Photos
 from utility import proportional_resizing
+from utility import image_adjustment
 import configparser
 
 __author__ = 'Hernani Aleman Ferraz'
@@ -185,24 +186,10 @@ class ScreenPlayer(tk.Frame):
                 if w <= 0 or h <= 0:
                     return
                 self.canvas.delete(tk.ALL) # borra todos los objetos con ese tags....
-                w_i, h_i = self.imagen.size
+                #  w_i, h_i = self.imagen.size
+                marco = w, h  # marco de ventana
                 self.imagen_copy = self.imagen.copy()
-                # print('>>>>> >>>> relacion :', w/h, w_i/h_i)
-                r_sc = w/h
-                r_im = w_i/h_i
-                if r_im >=1:
-                    if r_sc >= r_im:
-                        self.imagen_copy = proportional_resizing(self.imagen_copy, height=h)
-                    else:
-                        self.imagen_copy = proportional_resizing(self.imagen_copy, width=w)
-                elif r_im < 1:
-                    if r_sc < r_im:
-                        self.imagen_copy = proportional_resizing(self.imagen_copy, width=w)
-                    else:
-                        self.imagen_copy = proportional_resizing(self.imagen_copy, height=h)
-                else:
-                    print('>> exception -resize image-')
-                    self.imagen_copy = self.imagen_copy.resize((w, h), Image.ANTIALIAS)
+                self.imagen_copy = image_adjustment(self.imagen_copy, marco)
                 self.photo = ImageTk.PhotoImage(self.imagen_copy)
                 self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
             
@@ -375,8 +362,10 @@ class ScreenPlayer(tk.Frame):
                 self.imagen_copy = self.imagen.copy()
                 w = self.canvas.winfo_width()
                 h = self.canvas.winfo_height()
-                self.imagen = self.imagen_copy.resize((w, h), Image.ANTIALIAS)
-                self.photo = ImageTk.PhotoImage(self.imagen)
+                marco = w, h  # marco de ventana
+                self.imagen_copy = self.imagen.copy()
+                self.imagen_copy = image_adjustment(self.imagen_copy, marco)
+                self.photo = ImageTk.PhotoImage(self.imagen_copy)
                 self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
                 # print('>>> self.active_scale:', self.active_scale)
                 # if not self.active_scale:
