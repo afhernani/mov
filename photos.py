@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    from pil import Image
 import os
 
 __author__ = 'Hernani Aleman Ferraz'

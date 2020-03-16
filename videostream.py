@@ -3,7 +3,10 @@
 
 from ffpyplayer.player import MediaPlayer
 from ffpyplayer import pic
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    from pil import Image
 import time
 import os
 

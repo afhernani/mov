@@ -1,9 +1,12 @@
-#!/usr/bin/env python3
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from PIL import ImageTk, Image
+try:
+    from PIL import ImageTk, Image
+except ImportError:
+    from pil import ImageTk, Image
 import time
 import os
 from videostream import VideoStream

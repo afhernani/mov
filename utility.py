@@ -10,7 +10,7 @@ import sys
 try:
     from PIL import Image
 except ImportError:
-    import Image
+    from pil import Image
 
 def proportional_resizing(image, width=-1, height=-1):
     '''
