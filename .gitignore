@@ -1,0 +1,14 @@
+﻿_Work
+_Doc
+_Videos
+_Cod
+.idea
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.*
+.ini
+__pycache__
+seting.ini
