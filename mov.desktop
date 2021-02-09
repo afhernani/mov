@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=mov
+GenericName=player 
+Path=/media/hernani/WDatos/Share/afhernani.com/embed-Gtk-Gui/
+Exec=python3 viewerplayer.py
+Icon=/media/hernani/WDatos/Share/afhernani.com/embed-Gtk-Gui/Images/apply_b.png
+NoDisplay=false
+Terminal=true
+Categories=Utility;FileTools;
+StartupNotify=true
