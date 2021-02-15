@@ -27,7 +27,7 @@ class VideoStream:
             time.sleep(0.01)
         data  = self.player.get_metadata()
         print('data -->', data)
-        self.f_rate = int(data['frame_rate'][0]/data['frame_rate'][1])
+        self.f_rate = data['frame_rate']
         print('delay -> ', self.f_rate)
         self.w, self.h = data['src_vid_size']
         print('WxH -> ', self.w, self.h)
@@ -57,6 +57,27 @@ class VideoStream:
                 # self.imagen.show()
                 cond = False
 
+
+    # propierties.
+    @property
+    def f_rate(self):
+        return self.__f_rate
+
+    
+    @f_rate.setter
+    def f_rate(self, val):
+        import math
+        vn = val[0]
+        vd = val[1]
+        if vd <= 1:
+            self.__f_rate = vn
+        elif vd > 1 :
+            self.__f_rate = int(round(vn/vd))
+        else:
+            self.__f_rate = 30
+
+    # end properties.
+
     def get_frame(self):
         '''
         Return valores:
@@ -74,7 +95,7 @@ class VideoStream:
             time.sleep(0.01)
             return self.val, None, None
         else:
-            import math
+            # import math
             self._imagen, self.pts = self.l_frame
             return self.val, self.pts, self._imagen
             # w, h = self._imagen.get_size()
