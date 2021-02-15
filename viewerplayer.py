@@ -26,7 +26,7 @@ class ScreenPlayer(tk.Frame):
         ''' Initialice window app '''
         super().__init__(master)        
         self.master = master
-        self.master.geometry('422x624+629+231') 
+        # self.master.geometry('422x624+629+231') -> desarrollo ahead.
         self.pack(fill=tk.BOTH, expand=1)
         self.master.title(title)
         self.master['bg'] = 'Black'
@@ -51,13 +51,35 @@ class ScreenPlayer(tk.Frame):
             try:
                 self.dirpathmovies.set(os.path.dirname(self.video_source))
                 self.vid = VideoStream(self.video_source)
-                w = self.vid.w
-                h = self.vid.h
+                # w_f, h_f = self.vid.w, self.vid.h
                 self.duracion = self.vid.duration
+                
                 self.soundvar.set(self.vid.player.get_volume())
+                frame = None
+                while frame is None:
+                    self.val, self.pts, frame = self.vid.get_frame()
+                size = frame.get_size()
+                arr = frame.to_memoryview()[0] # array image
+                self.imagen = Image.frombytes("RGB", size, arr.memview)
+                w_f, h_f = self.imagen.size
+                self.delay = self.vid.f_rate
+                self.vid.toggle_pause()
+                self._wxh = (w_f, (h_f + 40))
+                self._twh = (300, 300)
             except Exception as e:
                 print(e)
-                self.vid = None
+                self.video_source = None
+        else:
+            self.imagen = self.photos._logo
+            w_f, h_f = self.imagen.size
+            self.delay = 16
+            self._wxh = (422, 624)
+            self._twh = (629, 231)
+            pass
+        # ajuste ventana.
+        str_window = str(self._wxh[0])+ 'x'+str(self._wxh[1])+ '+' + str(self._twh[0])+ '+' + str(self._twh[1])
+        self.master.geometry(str_window)
+        print('str ventana de inicio:', str_window)
         # event changed de volume
         self.soundvar.trace('w', self.soundvar_adjust)
         # Create a canvas that can fit the above video source size
@@ -82,7 +104,7 @@ class ScreenPlayer(tk.Frame):
         self.btn_replay.pack(side='right')
         # Button play-pausa
         self.btn_toogle_pause = tk.Button(self.conten_controls, text="[]", command=self.toogle_pause)
-        self.btn_toogle_pause['image'] = self.photos._pause
+        self.btn_toogle_pause['image'] = self.photos._play
         self.btn_toogle_pause.pack(side='right')
         # Slade
         self.var_t = tk.DoubleVar()
@@ -97,30 +119,28 @@ class ScreenPlayer(tk.Frame):
         # self.master.wm_withdraw()
         self.canvas.pack(side =tk.TOP, fill=tk.BOTH, expand=1)
         self.conten_controls.pack(side='bottom', fill='x')
-        self.delay = 16
+        
+        
         if self.video_source is not None:
-            self.delay = self.vid.f_rate
-            self.btn_toogle_pause['image'] = self.photos._play
+            self.scale.configure(to=self.duracion)
+            self.btn_toogle_pause['image'] = self.photos._pause
+            self.vid.player.set_volume(float(self.soundvar.get()))
             self.canvas_tags = None
-        else:
-            self.imagen = self.photos._logo
-            w_f, h_f = self.imagen.size
-            # w_f, h_f = self.imagen.width(), self.imagen.height()
-            # # data = self.imagen_l.
-            # self.imagen_l_copy = Image.frombytes('RGB', self.imagen_l.size, data)
-            self.photo = ImageTk.PhotoImage(self.imagen)
-            self.canvas.configure(width = w_f, height=h_f)
-            self.canvas.create_image(w_f/2, h_f/2, image = self.photo, 
+            
+        self.photo = ImageTk.PhotoImage(self.imagen)
+        self.canvas.configure(width = w_f, height=h_f)
+        self.canvas.create_image(w_f/2, h_f/2, image = self.photo, 
                                         anchor='center', tags='img')
         self.val = None
         self.pts = None
         #
-        self._wxh = (422, 624)
-        self._twh = (629, 231)
+        
       
-        self.get_init_status()
+        if self.video_source is None:
+            self.get_init_status()
         self.update()
         self.master.mainloop()
+
     
     def get_init_status(self):
         '''
@@ -377,8 +397,22 @@ class ScreenPlayer(tk.Frame):
         self.master.after(self.delay, self.update)
 
 
+import sys
+
 if __name__ == '__main__':
     # Create a window and pass it to the Application object
+    source_v = None
+    argv = list(reversed(sys.argv))
+    print('init argument:', argv)
+    while len(argv)>0:
+        arg = argv.pop()
+        if os.path.isfile(arg):
+            ext = ('.mp4', '.MP4', '.flv', '.FLV', '.mpeg', '.MPEG', '.avi', '.AVI')
+            # es un fichro.
+            if arg.endswith(ext):
+                # es un video
+                source_v = arg
+                print('argumentos:', source_v)
+        
     root = tk.Tk()
-    source_v = '/media/hernani/WDatos/Share/afhernani.com/embed/_Work/dw11222.mp4'
-    ScreenPlayer(root, "Tkinter and ffpyplayer < Flash player >")
+    ScreenPlayer(root, title="Tkinter and ffpyplayer < Flash player >", video=source_v)
