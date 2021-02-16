@@ -31,6 +31,9 @@ class ScreenPlayer(tk.Frame):
         self.master.title(title)
         self.master['bg'] = 'Black'
         self.master.protocol('WM_DELETE_WINDOW', self.confirmExit)
+        self.master.protocol('WM_TAKE_FOCUS', self.confirmOpen)
+        self.master.protocol('WM_SAVE_YOURSELF', self.confirmSave)
+        self.init = True
         self.setingfile = 'flash_seting.ini'
         # self.window.resizable(width=False, height=False)
         self.n_size = None
@@ -53,7 +56,6 @@ class ScreenPlayer(tk.Frame):
                 self.vid = VideoStream(self.video_source)
                 # w_f, h_f = self.vid.w, self.vid.h
                 self.duracion = self.vid.duration
-                
                 self.soundvar.set(self.vid.player.get_volume())
                 frame = None
                 while frame is None:
@@ -178,6 +180,21 @@ class ScreenPlayer(tk.Frame):
             self.master.quit()
         self.set_init_status()
         print('end process')
+
+    def confirmOpen(self):
+        '''here play the video if exist and window activate at init of app'''
+        print(f">> Confirm Open -- init:{self.init}")
+        if self.init:
+            if self.vid is not None:
+                self.vid.toggle_pause()
+                self.btn_toogle_pause['image'] = self.photos._play
+            self.init=False
+
+
+    def confirmSave(self):
+        print('>> push confirm Save.')
+        pass
+
 
     def master_button_press(self, event):
         print('>> master_button_press')
