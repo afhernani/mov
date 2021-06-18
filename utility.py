@@ -11,6 +11,7 @@ try:
     from PIL import Image
 except ImportError:
     from pil import Image
+    print('Error to load PIL lib, try: pip install pillow')
 
 def proportional_resizing(image, width=-1, height=-1):
     '''
