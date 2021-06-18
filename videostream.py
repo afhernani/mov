@@ -7,6 +7,7 @@ try:
     from PIL import Image
 except ImportError:
     from pil import Image
+    print('Error to load PIL lib, try: pip install pillow')
 import time
 import os
 
