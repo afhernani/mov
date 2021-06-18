@@ -7,6 +7,7 @@ try:
     from PIL import ImageTk, Image
 except ImportError:
     from pil import ImageTk, Image
+    print('Error to load PIL lib, try: pip install pillow')
 import time
 import os
 from videostream import VideoStream
