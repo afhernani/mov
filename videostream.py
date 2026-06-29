@@ -3,11 +3,9 @@
 
 from ffpyplayer.player import MediaPlayer
 from ffpyplayer import pic
-try:
-    from PIL import Image
-except ImportError:
-    from pil import Image
-    print('Error to load PIL lib, try: pip install pillow')
+
+from PIL import Image
+
 import time
 import os
 

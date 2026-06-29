@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import tkinter as tk
-try:
-    from PIL import Image
-except ImportError:
-    from pil import Image
-    print('Error to load PIL lib, try: pip install pillow')
 import os, sys
+from PIL import Image
+
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'

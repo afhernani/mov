@@ -7,11 +7,8 @@ __apply__ = 'Flash - player'
 __version__ = '1.2'
 
 import sys
-try:
-    from PIL import Image
-except ImportError:
-    from pil import Image
-    print('Error to load PIL lib, try: pip install pillow')
+from PIL import Image
+
 
 def proportional_resizing(image, width=-1, height=-1):
     '''
@@ -39,7 +36,7 @@ def proportional_resizing(image, width=-1, height=-1):
         elif w_d ==-1 and h_d == -1:
             # 'the same image'
             return image
-        image = image.resize((w_d, h_d), Image.ANTIALIAS)
+        image = image.resize((w_d, h_d), Image.Resampling.LANCZOS)
         return image
     except IndexError as ider:
         print(ider)
@@ -73,7 +70,7 @@ def image_adjustment(imagen, size=None):
             else:
                 imagen = proportional_resizing(imagen_copy, height=h)
         else:
-            imagen = imagen_copy.resize((w, h), Image.ANTIALIAS)
+            imagen = imagen_copy.resize((w, h), Image.Resampling.LANCZOS)
     except IndexError as ider:
         print(ider)
         imagen = None
