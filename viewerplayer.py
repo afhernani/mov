@@ -3,11 +3,10 @@
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
-
 from PIL import ImageTk, Image
-
 import time
-import os
+import os, signal, sys
+
 from videostream import VideoStream
 from photos import Photos
 from utility import proportional_resizing
@@ -17,7 +16,21 @@ import configparser
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
-__version__ = '1.2'
+__version__ = '1.3'
+
+app_instance = None
+
+def signal_handler(signum, frame):
+    """Maneja señales de terminación (Ctrl+C, kill, etc.)"""
+    print(f'\n Señal de terminación recibida: {signum}')
+    if app_instance and hasattr(app_instance, 'close'):
+        app_instance.close()
+    sys.exit(0)
+
+# Registrar manejadores de señales
+signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
+signal.signal(signal.SIGTERM, signal_handler)  # kill command
+
 
 class ScreenPlayer(tk.Frame):
     
@@ -29,10 +42,11 @@ class ScreenPlayer(tk.Frame):
         self.pack(fill=tk.BOTH, expand=1)
         self.master.title(title)
         self.master['bg'] = 'Black'
-        self.master.protocol('WM_DELETE_WINDOW', self.confirmExit)
+        self.master.protocol('WM_DELETE_WINDOW', self.on_closing)
         self.master.protocol('WM_TAKE_FOCUS', self.confirmOpen)
-        self.master.protocol('WM_SAVE_YOURSELF', self.confirmSave)
+        #self.master.protocol('WM_SAVE_YOURSELF', self.confirmSave)
         self.init = True
+        self._closed = False # ← NUEVO: Flag para evitar doble cierre
         self.setingfile = 'flash_seting.ini'
         # self.window.resizable(width=False, height=False)
         self.n_size = None
@@ -56,20 +70,29 @@ class ScreenPlayer(tk.Frame):
                 # w_f, h_f = self.vid.w, self.vid.h
                 self.duracion = self.vid.duration
                 self.soundvar.set(self.vid.player.get_volume())
+                # Obtener primer frame
                 frame = None
                 while frame is None:
                     self.val, self.pts, frame = self.vid.get_frame()
-                size = frame.get_size()
-                arr = frame.to_memoryview()[0] # array image
-                self.imagen = Image.frombytes("RGB", size, arr.memview)
-                w_f, h_f = self.imagen.size
-                self.delay = self.vid.f_rate
-                self.vid.toggle_pause()
-                self._wxh = (w_f, (h_f + 40))
-                self._twh = (300, 300)
+                # Convertir usando el nuevo metodo
+                self.imagen = self._convert_frame_to_pil(frame)
+
+                #size = frame.get_size()
+                #arr = frame.to_memoryview()[0] # array image
+                #self.imagen = Image.frombytes("RGB", size, arr.memview)
+                if self.imagen:
+                    w_f, h_f = self.imagen.size
+                    self.delay = self.vid.f_rate
+                    self.vid.toggle_pause()
+                    self._wxh = (w_f, (h_f + 40))
+                    self._twh = (300, 300)
+                else:
+                    raise Exception("No se pudo cargar el primer frame")
+                
             except Exception as e:
-                print(e)
+                print(f"Error al cargar Video: {e}")
                 self.video_source = None
+                self.vid = None
         else:
             self.imagen = self.photos._logo
             w_f, h_f = self.imagen.size
@@ -180,6 +203,57 @@ class ScreenPlayer(tk.Frame):
         self.set_init_status()
         print('end process')
 
+    def on_closing(self):
+        """
+        Manejador del evento de cierre de la ventana.
+        Se ejecuta cuando el usuario hace clic en la X.
+        """
+        if messagebox.askokcancel('Salir', '¿Estás seguro de que quieres salir?'):
+            self.close()
+            self.master.destroy()
+
+    def close(self):
+        """
+        Cierra la aplicación de forma segura, liberando todos los recursos.
+        """
+        if self._closed:
+            return
+        
+        print('Cerrando aplicación...')
+        
+        try:
+            # 1. Detener la reproducción si está activa
+            if self.vid is not None:
+                try:
+                    if self.val != 'paused' and self.val != 'eof':
+                        self.vid.toggle_pause()  # Pausar primero
+                except Exception as e:
+                    print(f'Error pausando video: {e}')
+                
+                # 2. Cerrar el VideoStream (libera ffpyplayer)
+                self.vid.close()
+                self.vid = None
+                print('VideoStream cerrado')
+            
+            # 3. Guardar configuración
+            try:
+                self.set_init_status()
+                print('Configuración guardada')
+            except Exception as e:
+                print(f'Error guardando configuración: {e}')
+            
+            # 4. Limpiar variables de imagen
+            self.imagen = None
+            self.photo = None
+            self.imagen_copy = None
+            
+            print('Aplicación cerrada correctamente')
+            
+        except Exception as e:
+            print(f'Error crítico cerrando aplicación: {e}')
+        finally:
+            self._closed = True
+
     def confirmOpen(self):
         '''here play the video if exist and window activate at init of app'''
         print(f">> Confirm Open -- init:{self.init}")
@@ -192,8 +266,6 @@ class ScreenPlayer(tk.Frame):
 
     def confirmSave(self):
         print('>> push confirm Save.')
-        pass
-
 
     def master_button_press(self, event):
         print('>> master_button_press')
@@ -320,6 +392,14 @@ class ScreenPlayer(tk.Frame):
 
     def newplay(self):
         ''' get replay '''
+        # ← NUEVO: Cerrar el video anterior ANTES de cargar el nuevo
+        if self.vid is not None:
+            try:
+                self.vid.close()
+                self.vid = None
+                print('Video anterior cerrado antes de cargar nuevo')
+            except Exception as e:
+                print(f'Error cerrando video anterior: {e}')
         # put image play_b in btn_toogle_pause
         self.btn_toogle_pause['image'] = self.photos._play
         # load video stream
@@ -384,16 +464,54 @@ class ScreenPlayer(tk.Frame):
             self.dirImages = os.path.dirname(filesave)
         #self.vid.snapshot()
         print(filesave)
-        pass
  
     def update(self):
-        # Get a frame from the video source
+        """
+        Bucle principal de actualización del video
+        Se ejecuta periódicamente usando root.after()
+        """
         if not self.vid:
-            pass
-        else:
-            self.val, self.pts, frame = self.vid.get_frame()
+            # No hay video cargado, solo continuar el bucle
+            self.master.after(self.delay, self.update)
+            return
+        
+        # Obtener frame del video (sin time.sleep en el backend)
+        val, pts, frame = self.vid.get_frame()
+        
+        # Procesar frame si está disponible y no estamos moviendo la barra
+        if frame is not None and not self.active_scale:
+            # Convertir frame a PIL Image
+            self.imagen = self._convert_frame_to_pil(frame)
+            
+            if self.imagen:
+                # Dibujar en canvas
+                self._draw_canvas()
+                
+                # Actualizar tiempo actual
+                if pts is not None:
+                    self.var_t.set(pts)
+        
+        # Manejar fin de video
+        elif val == 'eof':
+            self.on_video_end()
+            return  # Detener el bucle de actualización
+        
+        # Continuar el bucle de actualización
+        self.master.after(self.delay, self.update)
 
-            if frame is not None and not self.active_scale:
+        '''
+        # Get a frame from the video source
+        if self.vid and not self.active_scale:
+            val, pts, frame = self.vid.get_frame()
+
+            if frame is not None:
+                # procesar y dibujar el frame
+                self.imagen = self._convert_frame_to_pil(frame)
+                self._draw_canvas()
+                self.var_t.set(pts)
+            elif val == 'eof':
+                self.on_video_end()
+                return # Detener el bucle
                 size = frame.get_size()
                 arr = frame.to_memoryview()[0] # array image
                 self.imagen = Image.frombytes("RGB", size, arr.memview)
@@ -409,8 +527,84 @@ class ScreenPlayer(tk.Frame):
                 # print('>>> self.active_scale:', self.active_scale)
                 # if not self.active_scale:
                 self.var_t.set(self.pts)
+               
+        # tkinter se encarga del timing. 
+        # Si el video es 30fps, delay = 33ms.
+        self.master.after(self.delay, self.update) '''
 
-        self.master.after(self.delay, self.update)
+    def _convert_frame_to_pil(self, frame):
+        """
+        Convierte un frame de ffpyplayer a PIL Image
+        Args:
+            frame: Frame de ffpyplayer (objeto Image de ffpyplayer)
+        Returns:
+            PIL.Image.Image: Imagen en formato PIL
+        """
+        if frame is None:
+            return None
+        
+        try:
+            size = frame.get_size()
+            arr = frame.to_memoryview()[0]  # array image
+            imagen = Image.frombytes("RGB", size, arr.memview)
+            return imagen
+        except Exception as e:
+            print(f"Error converting frame to PIL: {e}")
+            return None
+
+    def _draw_canvas(self):
+        """
+        Dibuja la imagen actual en el canvas, ajustándola al tamaño del canvas
+        """
+        if self.imagen is None:
+            return
+        
+        try:
+            # Obtener dimensiones del canvas
+            w = self.canvas.winfo_width()
+            h = self.canvas.winfo_height()
+            
+            if w <= 0 or h <= 0:
+                return
+            
+            # Limpiar canvas
+            self.canvas.delete(tk.ALL)
+            
+            # Ajustar imagen al canvas manteniendo proporciones
+            marco = (w, h)
+            self.imagen_copy = self.imagen.copy()
+            self.imagen_copy = image_adjustment(self.imagen_copy, marco)
+            
+            if self.imagen_copy is None:
+                return
+            
+            # Convertir a PhotoImage y dibujar
+            self.photo = ImageTk.PhotoImage(self.imagen_copy)
+            self.canvas.create_image(w/2, h/2, anchor='center', image=self.photo, tags='img')
+            
+        except Exception as e:
+            print(f"Error drawing canvas: {e}")
+
+    def on_video_end(self):
+        """
+        Maneja el evento cuando el video termina de reproducirse
+        """
+        print("Video ended")
+        
+        # Pausar el video
+        if self.vid:
+            self.vid.toggle_pause()
+        
+        # Cambiar botón a play
+        self.btn_toogle_pause['image'] = self.photos._play
+        self.val = 'paused'
+        
+        # Opcional: reiniciar al inicio
+        # self.vid.seek(pts=0.0)
+        # self.var_t.set(0.0)
+        
+        # Opcional: mostrar mensaje
+        # messagebox.showinfo("Fin", "El video ha terminado")
 
 
 import sys
@@ -420,6 +614,7 @@ if __name__ == '__main__':
     source_v = None
     argv = list(reversed(sys.argv))
     print('init argument:', argv)
+
     while len(argv)>0:
         arg = argv.pop()
         if os.path.isfile(arg):

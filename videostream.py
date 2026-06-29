@@ -12,18 +12,25 @@ import os
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
-__version__ = '1.2'
+__version__ = '1.3'
 
 class VideoStream:
     def __init__(self, video_source=None):
         ff_opts = {'paused': True, 'autoexit': False}  # Audio options
         self.video_surce = video_source
+        self._closed = False
         # Open the video source
         self.player = MediaPlayer(video_source, ff_opts=ff_opts)
-        # TODO: colocar pausa de tiempo para cargas mediaplayer y obtener los datos
-        # conseguir el frame rate para la sincronizacion self.dalay
-        while self.player.get_metadata()['src_vid_size'] == (0, 0):
+
+        # Esperar a que los metadatos estén disponibles (sin bloquear el hilo principal)
+        max_attempts = 100
+        attempts = 0        
+        while self.player.get_metadata()['src_vid_size'] == (0, 0) and attempts<max_attempts:
             time.sleep(0.01)
+            attempts += 1
+        if attempts >= max_attempts:
+            raise Exception("No se pudieron cargar los metadatos del video")
+        # .......
         data  = self.player.get_metadata()
         print('data -->', data)
         self.f_rate = data['frame_rate']
@@ -91,7 +98,7 @@ class VideoStream:
             # self.player.toggle_pause() # ponemos en pause
             return self.val, None, None 
         elif self.l_frame is None:
-            time.sleep(0.01)
+            # time.sleep(0.01)
             return self.val, None, None
         else:
             # import math
@@ -126,8 +133,8 @@ class VideoStream:
         try: # Stopping audio
             self.player.toggle_pause()
             # self.player = None
-        except:
-            pass
+        except Exception as e:
+            print(e)
     
     def seek(self, pts=None, relative=False, accurate=False):
         if not pts:
@@ -154,10 +161,33 @@ class VideoStream:
             img.save(name_out)
         
 
+    def close(self):
+        """
+        Libera explícitamente todos los recursos del reproductor.
+        Debe llamarse ANTES de destruir el objeto.
+        """
+        if self._closed:
+            return  # Evitar doble cierre
+        
+        try:
+            if hasattr(self, 'player') and self.player is not None:
+                self.player.close_player()
+                self.player = None
+                print('VideoStream: Recursos liberados correctamente')
+        except Exception as e:
+            print(f'Error cerrando VideoStream: {e}')
+        finally:
+            self._closed = True
+
+
     # Release the video source when the object is destroyed
     def __del__(self):
-        self.player.close_player()
-        print('__del__')
+        """
+        Fallback de seguridad (no confiable, pero mejor que nada)
+        """
+        if not getattr(self, '_closed', True):
+            print('VideoStream cerrado por __del__ (no es ideal)')
+            self.close()
 
 
 if __name__ == '__main__':

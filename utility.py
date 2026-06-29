@@ -41,11 +41,25 @@ def proportional_resizing(image, width=-1, height=-1):
     except IndexError as ider:
         print(ider)
 
-def image_adjustment(imagen, size=None):
+def image_adjustment(imagen, size):
     '''
     size = (w, h)
     Image adjustment to a dimension frame width = w and height = h
     Return None or imagen adjustment.
+    '''
+    if not imagen or not size: return None
+    w, h = size
+    if w <= 0 or h <= 0: return None
+
+    w_i, h_i = imagen.size
+    # Calcular la relación de aspecto para mantener proporciones
+    ratio = min(w / w_i, h / h_i)
+    new_w = int(w_i * ratio)
+    new_h = int(h_i * ratio)
+    
+    # Redimensionar manteniendo la calidad
+    imagen = imagen.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    return imagen
     '''
     try:
         if size is not None:
@@ -71,10 +85,10 @@ def image_adjustment(imagen, size=None):
                 imagen = proportional_resizing(imagen_copy, height=h)
         else:
             imagen = imagen_copy.resize((w, h), Image.Resampling.LANCZOS)
-    except IndexError as ider:
+    except Exception as ider:
         print(ider)
         imagen = None
-    return imagen
+    return imagen '''
 
 if __name__ == '__main__':
     image = Image.open('_Work/imagen/tumblr_oomj53OOUV1qkbpm3o1_1280.jpg')
