@@ -73,9 +73,9 @@ class AppConfig:
     # ──────────────────────────────────────────────
     DEFAULTS = {
         'window': {
-            'width': '422',
-            'height': '624',
-            'pos_x': '629',
+            'width': '400',
+            'height': '400',
+            'pos_x': '231',
             'pos_y': '231',
         },
         'paths': {
