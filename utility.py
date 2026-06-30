@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
+from PIL import Image
+from config import get_logger
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
 __version__ = '1.2'
 
-import sys
-from PIL import Image
-
+logger = get_logger('utility')
 
 def proportional_resizing(image, width=-1, height=-1):
     '''
@@ -39,7 +40,7 @@ def proportional_resizing(image, width=-1, height=-1):
         image = image.resize((w_d, h_d), Image.Resampling.LANCZOS)
         return image
     except IndexError as ider:
-        print(ider)
+        logger.error(f"Error en proportional_resizing: {ider}")
 
 def image_adjustment(imagen, size):
     '''

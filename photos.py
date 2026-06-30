@@ -2,24 +2,14 @@
 import tkinter as tk
 import os, sys
 from PIL import Image, ImageTk, ImageDraw
-
+from config import get_resource_path, get_logger
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
 __version__ = '1.3'
 
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
+logger = get_logger('photos')
 
 def create_fallback_image(width=32, height=32, color='gray', text='?'):
     """
@@ -102,7 +92,7 @@ class Photos():
             attr_name: Nombre del atributo (ej: '_play')
             config: Diccionario con configuración de la imagen
         """
-        file_path = resource_path(config['file'])
+        file_path = get_resource_path(config['file'])
         color = config.get('color', 'gray')
         text = config.get('text', '?')
         
@@ -130,7 +120,7 @@ class Photos():
         """
         Carga el logo de la aplicación con fallback
         """
-        logo_path = resource_path('Images/flash.png')
+        logo_path = get_resource_path('Images/flash.png')
         
         try:
             if os.path.exists(logo_path):

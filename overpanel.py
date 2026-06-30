@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import tkinter as tk
+from config import get_logger
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
-__version__ = '1.2'
+__version__ = '1.3'
+
+logger = get_logger('overpanel')
 
 class Over(tk.Toplevel):
     """
@@ -30,8 +32,10 @@ class Over(tk.Toplevel):
         self.posstcenter(self.master)
         self.wm_attributes('-alpha', 0.7)
         self.bind('<Leave>', self.mouse_leave)
+        logger.debug('Panel de volumen abierto')
 
     def mouse_leave(self, event):
+        logger.debug(f"Panel de volumen cerrado {event}")
         self.destroy()
 
     def posstcenter(self, toplevel):
@@ -61,6 +65,6 @@ class Over(tk.Toplevel):
 
 
     def onscale(self, val):
-        print(val)
+        logger.debug(f"Voumen ajustado: {val}")
         self.vartext.set(float(val))
 

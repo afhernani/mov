@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 from ffpyplayer.player import MediaPlayer
 from ffpyplayer import pic
-
 from PIL import Image
-
 import time
 import os
-
+from config import get_logger
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
 __version__ = '1.3'
 
+logger = get_logger('videostream')
+
 class VideoStream:
     def __init__(self, video_source=None):
+        """VideoStream, cadena de video utilizando la biblioteca ffpyplayer"""
         ff_opts = {'paused': True, 'autoexit': False}  # Audio options
         self.video_surce = video_source
         self._closed = False
         # Open the video source
+        logger.info(f'Abriendo video: {video_source}')
         self.player = MediaPlayer(video_source, ff_opts=ff_opts)
 
         # Esperar a que los metadatos estén disponibles (sin bloquear el hilo principal)
@@ -32,32 +33,33 @@ class VideoStream:
             raise Exception("No se pudieron cargar los metadatos del video")
         # .......
         data  = self.player.get_metadata()
-        print('data -->', data)
+        logger.info(f'data = {data}')
+
         self.f_rate = data['frame_rate']
-        print('delay -> ', self.f_rate)
+        logger.info(f'delay ó fps = {self.f_rate}')
         self.w, self.h = data['src_vid_size']
-        print('WxH -> ', self.w, self.h)
+        logger.info(f'WxH = {self.w}x{self.h}')
         self.pts = self.player.get_pts() # Returns the elapsed play time. float
-        print('pts ->', self.pts)
+        logger.info(f'pts = {self.pts}')
         self.duration = data['duration']
-        print('duration', self.duration)
+        logger.info(f'duration {self.duration}')
         self.pause = self.player.get_pause() # Returns whether the player is paused.
-        print('pause ->', self.pause)
+        logger.info(f'pause = {self.pause}')
         self.volume = self.player.get_volume() # Returns the volume of the audio. loat: A value between 0.0 - 1.0
-        print('volume ->', self.volume)
+        logger.info(f'volume = {self.volume}')
         self.player.toggle_pause() # Toggles -alterna- the player’s pause state
         # self.player.set_pause(False) # auses or un-pauses the file. state: bool
         cond = True
         while cond:
             self.l_frame, self.val = self.player.get_frame()
             if self.val == 'eof':
-                print('can not open source: ', video_source)
+                logger.error(f'can not open source: {video_source}')
                 break
             elif self.l_frame is None:
                 time.sleep(0.01)
             else:
                 self._imagen, self.pts = self.l_frame
-                print('pts ->', self.pts)
+                logger.info(f'pts = {self.pts}')
                 # arr = self._imagen.to_memoryview()[0] # array image
                 # self.imagen = Image.frombytes("RGB", self.original_size, arr.memview)
                 # self.imagen.show()
@@ -134,7 +136,7 @@ class VideoStream:
             self.player.toggle_pause()
             # self.player = None
         except Exception as e:
-            print(e)
+            logger.error(f'Error en toggle_pause: {e}')
     
     def seek(self, pts=None, relative=False, accurate=False):
         if not pts:
@@ -159,6 +161,7 @@ class VideoStream:
             else:
                 name_out = os.path.join(road, frame_name)
             img.save(name_out)
+            logger.info(f"Snapshot guardado: {name_out}")
         
 
     def close(self):
@@ -173,9 +176,9 @@ class VideoStream:
             if hasattr(self, 'player') and self.player is not None:
                 self.player.close_player()
                 self.player = None
-                print('VideoStream: Recursos liberados correctamente')
+                logger.info('VideoStream: Recursos liberados correctamente')
         except Exception as e:
-            print(f'Error cerrando VideoStream: {e}')
+            logger.error(f'Error cerrando VideoStream: {e}')
         finally:
             self._closed = True
 
@@ -186,9 +189,11 @@ class VideoStream:
         Fallback de seguridad (no confiable, pero mejor que nada)
         """
         if not getattr(self, '_closed', True):
-            print('VideoStream cerrado por __del__ (no es ideal)')
+            logger.warning('VideoStream cerrado por __del__ (no es ideal)')
             self.close()
 
 
 if __name__ == '__main__':
-    video = VideoStream('_Work/tem.mp4')
+    string_v = "E:/Store/Documedia/Documental/American Civil War Every Day with Army Sizes.mp4"
+    logger.info(string_v)
+    video = VideoStream(string_v)

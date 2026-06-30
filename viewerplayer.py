@@ -11,18 +11,25 @@ from videostream import VideoStream
 from photos import Photos
 from utility import proportional_resizing
 from utility import image_adjustment
-import configparser
+from config import AppConfig, get_logger
 
 __author__ = 'Hernani Aleman Ferraz'
 __email__ = 'afhernani@gmail.com'
 __apply__ = 'Flash - player'
 __version__ = '1.3'
 
+# ──────────────────────────────────────────────
+# INSTANCIA GLOBAL DE CONFIGURACIÓN
+# ──────────────────────────────────────────────
+app_config = AppConfig()
+logger = get_logger('viewerplayer')
+
+# variable global para señal handler
 app_instance = None
 
 def signal_handler(signum, frame):
     """Maneja señales de terminación (Ctrl+C, kill, etc.)"""
-    print(f'\n Señal de terminación recibida: {signum}')
+    logger.warning(f'\n Señal de terminación recibida: {signum}')
     if app_instance and hasattr(app_instance, 'close'):
         app_instance.close()
     sys.exit(0)
@@ -47,18 +54,25 @@ class ScreenPlayer(tk.Frame):
         #self.master.protocol('WM_SAVE_YOURSELF', self.confirmSave)
         self.init = True
         self._closed = False # ← NUEVO: Flag para evitar doble cierre
-        self.setingfile = 'flash_seting.ini'
+        # self.setingfile = 'flash_seting.ini'
         # self.window.resizable(width=False, height=False)
+        # Cargar configuración centralizada
+        self.config = app_config
+        self.logger = get_logger('ScreenPlayer')
+
         self.n_size = None
         self.photo = None
         self.photos = Photos()
+
         # self.master.call('wm', 'iconphoto', self.master, self.photos._apply)
         self.soundvar = tk.DoubleVar(value=0.9)
         self.master.wm_iconphoto(True, self.photos._apply)
+
         self.dirImages = None
-        self.dirpathmovies = tk.StringVar()  # directorio path video
+        self.dirpathmovies = tk.StringVar(value=self.config.get_last_video_dir())  # directorio path video
         self.video_source = video
-        w = 350; h = 230; self.duracion = 100.0
+        # w = 350; h = 230; 
+        self.duracion = 100.0
         self.active_scale = False
         self.vid = None
         self.val = 'paused'
@@ -66,6 +80,7 @@ class ScreenPlayer(tk.Frame):
             # open video source (by default this will try to open the computer webcam)
             try:
                 self.dirpathmovies.set(os.path.dirname(self.video_source))
+                self.config.save_last_video(self.video_source)
                 self.vid = VideoStream(self.video_source)
                 # w_f, h_f = self.vid.w, self.vid.h
                 self.duracion = self.vid.duration
@@ -88,9 +103,9 @@ class ScreenPlayer(tk.Frame):
                     self._twh = (300, 300)
                 else:
                     raise Exception("No se pudo cargar el primer frame")
-                
+                self.vid.toggle_pause()
             except Exception as e:
-                print(f"Error al cargar Video: {e}")
+                self.logger.error(f"Error al cargar Video: {e}")
                 self.video_source = None
                 self.vid = None
         else:
@@ -99,11 +114,18 @@ class ScreenPlayer(tk.Frame):
             self.delay = 16
             self._wxh = (422, 624)
             self._twh = (629, 231)
-            pass
+        
         # ajuste ventana.
-        str_window = str(self._wxh[0])+ 'x'+str(self._wxh[1])+ '+' + str(self._twh[0])+ '+' + str(self._twh[1])
+        # str_window = str(self._wxh[0])+ 'x'+str(self._wxh[1])+ '+' + str(self._twh[0])+ '+' + str(self._twh[1])
+        # ← CAMBIAR: Usar geometría del config si no hay video
+        if self.video_source is None:
+            str_window = self.config.get_window_geometry()
+        else:
+            str_window = (f'{self._wxh[0]}x{self._wxh[1]}'
+                          f'+{self._twh[0]}+{self._twh[1]}')
+        
         self.master.geometry(str_window)
-        print('str ventana de inicio:', str_window)
+        self.logger.info(f'str ventana de inicio: {str_window}')
         # event changed de volume
         self.soundvar.trace('w', self.soundvar_adjust)
         # Create a canvas that can fit the above video source size
@@ -160,48 +182,18 @@ class ScreenPlayer(tk.Frame):
         #
         
       
-        if self.video_source is None:
-            self.get_init_status()
+        #if self.video_source is None:
+        #    self.get_init_status()
         self.update()
         self.master.mainloop()
 
-    
-    def get_init_status(self):
-        '''
-        extract init status of app
-        Return:
-        '''
-        if not os.path.exists(self.setingfile):
-            return
-        config = configparser.RawConfigParser()
-        config.read(self.setingfile)
-        dirpathmovies = config.get('Setings', 'path_movies')
-        if os.path.exists(dirpathmovies):
-            self.dirpathmovies.set(dirpathmovies)
-            # inicializa la lista con directorio duardao
-        dirpathimages =config.get('Setings', 'path_images')
-        if os.path.exists(dirpathimages):
-            self.dirImages = dirpathimages
-            # inicializa la lista con directorio duardao
-    
-    def set_init_status(self):
-        '''
-        write init status of app
-        Return:
-        '''
-        config = configparser.RawConfigParser()
-        config.add_section('Setings')
-        config.set('Setings', 'path_movies', self.dirpathmovies.get())
-        config.set('Setings', 'path_images', self.dirImages)
-        with open(self.setingfile, 'w') as configfile:
-            config.write(configfile)
-        print('Write config file')
 
     def confirmExit(self):
         if messagebox.askokcancel('Quit', 'Are you sure you want to exit?'):
-            self.master.quit()
-        self.set_init_status()
-        print('end process')
+            self.close()
+            self.master.destroy()
+        #self.set_init_status()
+        #print('end process')
 
     def on_closing(self):
         """
@@ -219,44 +211,52 @@ class ScreenPlayer(tk.Frame):
         if self._closed:
             return
         
-        print('Cerrando aplicación...')
-        
+        self.logger.info('Cerrando aplicación...')
         try:
-            # 1. Detener la reproducción si está activa
+            # 1. Guardar geometría de la ventana
+            self._save_window_state()
+            
+            # 2. Guardar volumen
+            self.config.save_volume(self.soundvar.get())
+            
+            # 3. Cerrar VideoStream
             if self.vid is not None:
-                try:
-                    if self.val != 'paused' and self.val != 'eof':
-                        self.vid.toggle_pause()  # Pausar primero
-                except Exception as e:
-                    print(f'Error pausando video: {e}')
-                
-                # 2. Cerrar el VideoStream (libera ffpyplayer)
                 self.vid.close()
                 self.vid = None
-                print('VideoStream cerrado')
+                self.logger.info('VideoStream cerrado')
             
-            # 3. Guardar configuración
-            try:
-                self.set_init_status()
-                print('Configuración guardada')
-            except Exception as e:
-                print(f'Error guardando configuración: {e}')
-            
-            # 4. Limpiar variables de imagen
+            # 4. Limpiar imágenes
             self.imagen = None
             self.photo = None
             self.imagen_copy = None
             
-            print('Aplicación cerrada correctamente')
+            self.logger.info('Aplicación cerrada correctamente')
             
         except Exception as e:
-            print(f'Error crítico cerrando aplicación: {e}')
+            self.logger.error(f'Error crítico cerrando: {e}')
         finally:
             self._closed = True
 
+    def _save_window_state(self):
+        """Guarda el estado actual de la ventana en la configuración."""
+        try:
+            geo = self.master.geometry()
+            # Parsear geometría: 'WIDTHxHEIGHT+X+Y'
+            if '+' in geo:
+                size_part, pos_part = geo.split('+', 1)
+                w, h = size_part.split('x')
+                x, y = pos_part.split('+')
+                self.config.save_window_geometry(w, h, x, y)
+            else:
+                w, h = geo.split('x')
+                self.config.save_window_geometry(w, h, 
+                    self.master.winfo_x(), self.master.winfo_y())
+        except Exception as e:
+            self.logger.error(f'Error guardando geometría: {e}')
+
     def confirmOpen(self):
         '''here play the video if exist and window activate at init of app'''
-        print(f">> Confirm Open -- init:{self.init}")
+        self.logger.info(f">> Confirm Open -- init:{self.init}")
         if self.init:
             if self.vid is not None:
                 self.vid.toggle_pause()
@@ -265,24 +265,24 @@ class ScreenPlayer(tk.Frame):
 
 
     def confirmSave(self):
-        print('>> push confirm Save.')
+        self.logger.info('>> push confirm Save.')
 
     def master_button_press(self, event):
-        print('>> master_button_press')
+        self.logger.info('>> master_button_press')
 
     def master_button_release(self, event):
-        print('>> master_button_release')
+        self.logger.info('>> master_button_release')
 
     def master_on_resize(self, event):
         _ventana = event.widget
-        print(_ventana)
+        self.logger.info(f"[master_on_resize] {_ventana}")
         widget_size =(_ventana.winfo_width(), _ventana.winfo_height() )
         if str(_ventana) == '.!screenplayer.!canvas':
-            print('>> canvas:')
+            self.logger.info('>> canvas:')
         m_wxh = (event.x, event.y)
-        print('>> rezise:', m_wxh, self._wxh, 'widget_size:', widget_size)
+        self.logger.info(f">> rezise:, {m_wxh}, {self._wxh}, widget_size:, {widget_size}")
         if self._wxh != m_wxh and str(_ventana) == '.!screenplayer.!canvas' and m_wxh == (0, 0):
-            print('>> on_resize_master ')
+            self.logger.info('>> on_resize_master ')
             self._wxh = widget_size
             # self.master.configure(width=m_wxh[0], height=m_wxh[1])
             h_c = self.conten_controls.winfo_height()
@@ -305,11 +305,11 @@ class ScreenPlayer(tk.Frame):
                 self.canvas.create_image(w/2, h/2, anchor='center', image = self.photo, tags='img')
             
     def scale_button_press(self, event):
-        print('>> scale_button_press')
+        self.logger.info('>> scale_button_press')
         self.active_scale = True
     
     def scale_button_release(self, event):
-        print('>> scale_button_release')
+        self.logger.info('>> scale_button_release')
         self.active_scale = False
     
     def open_adjust_volumen(self):
@@ -319,10 +319,12 @@ class ScreenPlayer(tk.Frame):
         dialog.mainloop()
     
     def soundvar_adjust(self, *args):
-        print('sound adjust ->', self.soundvar.get())
+        """ Ajustar el volumen del video. """
+        vol = self.soundvar.get()
+        self.logger.debug(f'[sound adjust] -> {self.soundvar.get()}')
         if self.vid:
-            print('if self.vid: soundvar_adjust')
-            self.vid.player.set_volume(self.soundvar.get())
+            self.vid.player.set_volume(vol)
+            self.config.save_volume(vol)
 
     def isurl(self, tip=None):
         '''
@@ -339,19 +341,20 @@ class ScreenPlayer(tk.Frame):
 
     def open_file(self):
         ''' Open file with menu ... '''
-        if self.dirpathmovies.get()=='':
-            dirpath='.'
-        else:
-            dirpath = self.dirpathmovies.get()
-        file = filedialog.askopenfile(initialdir=dirpath, title='select file', 
-                                        filetypes={('flv','*.flv'), ('mp4','*.mp4'),
-                                        ('avi','*.avi'), ('mpg','*.mpg')}, 
+        dirpath = self.config.get_last_video_dir()
+        
+        file = filedialog.askopenfile(initialdir=dirpath, 
+                                        title='select file', 
+                                        filetypes={('mp4','*.mp4'), ('flv','*.flv'), 
+                                                   ('avi','*.avi'), ('mpg','*.mpg')}, 
                                         defaultextension='*.mp4')
-        print(file)
+        self.logger.info(f"fichero: {file}")
         if not file == None:
             if os.path.exists(file.name):
                 self.video_source = file.name
                 self.dirpathmovies.set(os.path.dirname(self.video_source))
+                self.config.save_last_video_dir(self.dirpathmovies.get())
+                self.config.save_last_video(str(file.name))
                 self.newplay()
         
     def toogle_pause(self):
@@ -368,7 +371,7 @@ class ScreenPlayer(tk.Frame):
             self.vid.toggle_pause()
 
     def onScale(self, val):
-        # print('>> scale onScale type val ->', type(val), val)
+        self.logger.info(f'[onScale] type, val ->, {type(val)}, {val}')
         if not self.vid:
             return
         try:
@@ -376,11 +379,12 @@ class ScreenPlayer(tk.Frame):
             self.vid.seek(pts=float(val))
             # self.active_scale = False
         except Exception as e:
-            print(e)
+            self.logger.error(f">> [onScale] exception: {e}")
             # self.active_scale = False
         # self.var_t.set(v)
 
     def replay(self):
+        self.logger.info("[replay]")
         if not self.vid:
             return
         if self.val == 'paused':
@@ -392,14 +396,15 @@ class ScreenPlayer(tk.Frame):
 
     def newplay(self):
         ''' get replay '''
+        self.logger.info("[newplay]")
         # ← NUEVO: Cerrar el video anterior ANTES de cargar el nuevo
         if self.vid is not None:
             try:
                 self.vid.close()
                 self.vid = None
-                print('Video anterior cerrado antes de cargar nuevo')
+                self.logger.info('Video anterior cerrado antes de cargar nuevo')
             except Exception as e:
-                print(f'Error cerrando video anterior: {e}')
+                self.logger.error(f'Error cerrando video anterior: {e}')
         # put image play_b in btn_toogle_pause
         self.btn_toogle_pause['image'] = self.photos._play
         # load video stream
@@ -411,7 +416,7 @@ class ScreenPlayer(tk.Frame):
         # get and set duration video stream
         self.duracion = self.vid.duration
         # print time duration
-        print('>> newplay: self.duracion ->', self.duracion)
+        self.logger.info(f'>> nuevo video: duracion = {self.duracion}')
         # set value maximun scale to
         self.scale.configure(to=self.duracion)
         # print configure values scale
@@ -438,7 +443,7 @@ class ScreenPlayer(tk.Frame):
             return
         frame = self.imagen.copy()
         if frame is None:
-            print('the video stream is closed')
+            self.logger.warning('the video stream is closed')
             return
         # define options for opening
         time_str = time.strftime("%d-%m-%Y-%H-%M-%S")
@@ -451,19 +456,17 @@ class ScreenPlayer(tk.Frame):
         options['filetypes'] = filetypes
         options['initialfile'] = filename
         options['title'] = title
-        if self.dirImages is not None:
-            options['initialdir'] = self.dirImages
-        else:
-            options['initialdir'] = os.getenv('HOME')
-        
+        options['initialdir'] = self.config.get_last_image_dir()
+               
         filesave = filedialog.asksaveasfilename(**options)
         
-        if filesave !='':
+        if filesave:
             frame.save(filesave)
+            self.config.save_last_image_dir(os.path.dirname(filesave))
             # actualiza directorio si este ha cambiado
             self.dirImages = os.path.dirname(filesave)
-        #self.vid.snapshot()
-        print(filesave)
+            self.logger.info(f"Snapshot guardado: {filesave}")
+        
  
     def update(self):
         """
@@ -589,7 +592,7 @@ class ScreenPlayer(tk.Frame):
         """
         Maneja el evento cuando el video termina de reproducirse
         """
-        print("Video ended")
+        self.logger.info("Video ended")
         
         # Pausar el video
         if self.vid:
@@ -613,7 +616,7 @@ if __name__ == '__main__':
     # Create a window and pass it to the Application object
     source_v = None
     argv = list(reversed(sys.argv))
-    print('init argument:', argv)
+    logger.info(f'init argument: {argv}')
 
     while len(argv)>0:
         arg = argv.pop()
@@ -623,7 +626,14 @@ if __name__ == '__main__':
             if arg.endswith(ext):
                 # es un video
                 source_v = arg
-                print('argumentos:', source_v)
-        
+                logger.info(f'argumentos: {source_v}')
+
+    # ← NUEVO: Si no hay argumento, intentar cargar el último video
+    if source_v is None:
+        last_video = app_config.get_last_video()
+        if last_video and os.path.exists(last_video):
+            source_v = last_video
+            logger.info(f'Cargando último video: {source_v}')
+
     root = tk.Tk()
     ScreenPlayer(root, title="Tkinter and ffpyplayer < Flash player >", video=source_v)
