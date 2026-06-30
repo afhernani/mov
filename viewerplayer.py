@@ -67,6 +67,7 @@ class ScreenPlayer(tk.Frame):
         # self.master.call('wm', 'iconphoto', self.master, self.photos._apply)
         self.soundvar = tk.DoubleVar(value=0.9)
         self.master.wm_iconphoto(True, self.photos._apply)
+        # self.master.iconphoto(True, self.photos.get_app_icon())
 
         self.dirImages = None
         self.dirpathmovies = tk.StringVar(value=self.config.get_last_video_dir())  # directorio path video
